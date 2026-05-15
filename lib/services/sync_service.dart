@@ -48,10 +48,7 @@ class SyncService extends GetxService {
     });
 
     // Periodic sync every 5 minutes
-    _syncTimer = Timer.periodic(
-      const Duration(minutes: 5),
-      (_) => syncAll(),
-    );
+    _syncTimer = Timer.periodic(const Duration(minutes: 5), (_) => syncAll());
   }
 
   /// Get Firestore path for user's shifts
@@ -68,13 +65,18 @@ class SyncService extends GetxService {
   Future<void> syncAll() async {
     if (!_connectivity.isConnected.value || !_auth.isLoggedIn) {
       syncStatus.value = SyncStatus.offline;
+      print(
+        '[SyncService] syncAll: Offline or not logged in. Connected: ${_connectivity.isConnected.value}, LoggedIn: ${_auth.isLoggedIn}',
+      );
       return;
     }
 
     try {
       syncStatus.value = SyncStatus.syncing;
+      print('[SyncService] Starting sync...');
 
-      // 1. Push local unsynced changes to Firestore
+      // Ensure Firebase auth token is ready for Firestore
+
       await _pushLocalChanges();
 
       // 2. Pull remote changes
@@ -83,10 +85,11 @@ class SyncService extends GetxService {
       syncStatus.value = SyncStatus.synced;
       lastSyncTime.value = DateTime.now();
       pendingSyncCount.value = 0;
+      print('[SyncService] Sync completed successfully');
     } catch (e) {
       syncStatus.value = SyncStatus.error;
-      // Don't throw - sync failures shouldn't crash the app
-      // Data is safe in Hive
+      print('[SyncService] ERROR during syncAll: $e');
+      rethrow;
     }
   }
 
@@ -94,7 +97,12 @@ class SyncService extends GetxService {
   Future<void> _pushLocalChanges() async {
     final unsyncedShifts = _hiveProvider.getUnsyncedShifts();
 
-    if (unsyncedShifts.isEmpty) return;
+    if (unsyncedShifts.isEmpty) {
+      print('[SyncService] No unsynced shifts to push');
+      return;
+    }
+
+    print('[SyncService] Pushing ${unsyncedShifts.length} unsynced shifts...');
 
     final batch = _firestore.batch();
 
@@ -103,20 +111,29 @@ class SyncService extends GetxService {
 
       if (shift.isDeleted) {
         batch.delete(docRef);
+        print('[SyncService] Queued delete for shift ${shift.id}');
       } else {
         batch.set(docRef, shift.toFirestoreMap(), SetOptions(merge: true));
+        print('[SyncService] Queued write for shift ${shift.id}');
       }
     }
 
-    await batch.commit();
+    try {
+      await batch.commit();
+      print('[SyncService] Batch commit successful');
 
-    // Mark all as synced locally
-    for (final shift in unsyncedShifts) {
-      if (shift.isDeleted) {
-        await _hiveProvider.permanentlyDeleteShift(shift.id);
-      } else {
-        await _hiveProvider.markAsSynced(shift.id);
+      // Mark all as synced locally
+      for (final shift in unsyncedShifts) {
+        if (shift.isDeleted) {
+          await _hiveProvider.permanentlyDeleteShift(shift.id);
+        } else {
+          await _hiveProvider.markAsSynced(shift.id);
+        }
       }
+      print('[SyncService] Marked ${unsyncedShifts.length} shifts as synced');
+    } catch (e) {
+      print('[SyncService] ERROR in batch commit: $e');
+      rethrow;
     }
   }
 
@@ -127,8 +144,10 @@ class SyncService extends GetxService {
 
       if (lastSyncTime.value != null) {
         snapshot = await _shiftsRef()
-            .where('updatedAt',
-                isGreaterThan: lastSyncTime.value!.toIso8601String())
+            .where(
+              'updatedAt',
+              isGreaterThan: lastSyncTime.value!.toIso8601String(),
+            )
             .get();
       } else {
         snapshot = await _shiftsRef().get();
@@ -153,26 +172,94 @@ class SyncService extends GetxService {
     }
   }
 
-  /// Sync a single shift immediately
+  /// Sync a single shift immediately with retry logic
   Future<void> syncShift(ShiftModel shift) async {
-    if (!_connectivity.isConnected.value || !_auth.isLoggedIn) {
+    if (!_connectivity.isConnected.value) {
       pendingSyncCount.value++;
+      print('[SyncService] No connectivity for shift ${shift.id}');
       return;
     }
 
+    if (!_auth.isLoggedIn) {
+      pendingSyncCount.value++;
+      print('[SyncService] User not authenticated for shift ${shift.id}');
+      return;
+    }
+
+    final userId = _auth.userId;
+    if (userId == null) {
+      pendingSyncCount.value++;
+      print('[SyncService] User UID is null for shift ${shift.id}');
+      return;
+    }
+
+    // Retry logic with exponential backoff
+    int retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        // Ensure user document exists first
+        await _ensureUserDocumentExists(userId);
+
+        if (shift.isDeleted) {
+          await _shiftsRef().doc(shift.id).delete();
+          await _hiveProvider.permanentlyDeleteShift(shift.id);
+          print('[SyncService] Successfully deleted shift ${shift.id}');
+        } else {
+          final firestoreData = shift.toFirestoreMap();
+          print('[SyncService] Writing shift data: $firestoreData');
+          await _shiftsRef()
+              .doc(shift.id)
+              .set(firestoreData, SetOptions(merge: true));
+          await _hiveProvider.markAsSynced(shift.id);
+          print(
+            '[SyncService] Successfully synced shift ${shift.id} for user $userId to path: users/$userId/shifts/${shift.id}',
+          );
+        }
+        return; // Success - exit retry loop
+      } catch (e) {
+        retries++;
+        print(
+          '[SyncService] Sync attempt $retries/$maxRetries failed for shift ${shift.id}: $e',
+        );
+
+        if (retries < maxRetries) {
+          // Exponential backoff: 500ms, 1s, 2s
+          final delay = Duration(milliseconds: 500 * (1 << (retries - 1)));
+          print('[SyncService] Retrying in ${delay.inMilliseconds}ms...');
+          await Future.delayed(delay);
+        }
+      }
+    }
+
+    // All retries exhausted
+    pendingSyncCount.value++;
+    print(
+      '[SyncService] FAILED to sync shift ${shift.id} after $maxRetries attempts',
+    );
+  }
+
+  /// Ensure user document exists in Firestore
+  Future<void> _ensureUserDocumentExists(String userId) async {
     try {
-      if (shift.isDeleted) {
-        await _shiftsRef().doc(shift.id).delete();
-        await _hiveProvider.permanentlyDeleteShift(shift.id);
-      } else {
-        await _shiftsRef()
-            .doc(shift.id)
-            .set(shift.toFirestoreMap(), SetOptions(merge: true));
-        await _hiveProvider.markAsSynced(shift.id);
+      final userRef = _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(userId);
+
+      final userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        // Create minimal user document
+        await userRef.set({
+          'uid': userId,
+          'createdAt': DateTime.now().toIso8601String(),
+          'lastSync': DateTime.now().toIso8601String(),
+        }, SetOptions(merge: true));
+        print('[SyncService] Created user document for $userId');
       }
     } catch (e) {
-      pendingSyncCount.value++;
-      // Data is safe locally - will sync later
+      print('[SyncService] Error ensuring user document exists: $e');
+      rethrow;
     }
   }
 

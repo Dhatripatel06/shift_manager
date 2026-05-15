@@ -96,28 +96,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // ─── Appearance ──────────────────────────
-              _buildSectionTitle('Appearance', isDark),
-              const SizedBox(height: 8),
-              _buildCard(
-                isDark: isDark,
-                child: Obx(() => _buildSettingRow(
-                      icon: themeCtrl.isDarkMode.value
-                          ? Icons.dark_mode_rounded
-                          : Icons.light_mode_rounded,
-                      title: 'Dark Mode',
-                      subtitle: themeCtrl.isDarkMode.value
-                          ? 'Dark theme active'
-                          : 'Light theme active',
-                      isDark: isDark,
-                      trailing: Switch.adaptive(
-                        value: themeCtrl.isDarkMode.value,
-                        onChanged: (_) => themeCtrl.toggleTheme(),
-                        activeTrackColor: AppColors.accent,
-                      ),
-                    )),
-              ),
-              const SizedBox(height: 24),
+           
 
               // ─── Data & Sync ─────────────────────────
               _buildSectionTitle('Data & Sync', isDark),

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'app_routes.dart';
+import 'auth_middleware.dart';
 import '../views/splash/splash_screen.dart';
 import '../views/auth/login_screen.dart';
 import '../views/home/home_screen.dart';
@@ -16,10 +17,7 @@ class AppPages {
   AppPages._();
 
   static final pages = [
-    GetPage(
-      name: AppRoutes.splash,
-      page: () => const SplashScreen(),
-    ),
+    GetPage(name: AppRoutes.splash, page: () => const SplashScreen()),
     GetPage(
       name: AppRoutes.login,
       page: () => const LoginScreen(),
@@ -37,6 +35,7 @@ class AppPages {
       name: AppRoutes.addShift,
       page: () => const AddShiftScreen(),
       binding: ShiftBinding(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 300),
     ),
@@ -44,6 +43,7 @@ class AppPages {
       name: AppRoutes.editShift,
       page: () => const AddShiftScreen(),
       binding: ShiftBinding(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 300),
     ),
@@ -51,6 +51,7 @@ class AppPages {
       name: AppRoutes.shiftList,
       page: () => const ShiftListScreen(),
       binding: ShiftBinding(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 300),
     ),
@@ -58,12 +59,14 @@ class AppPages {
       name: AppRoutes.statistics,
       page: () => const StatisticsScreen(),
       binding: StatisticsBinding(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: AppRoutes.settings,
       page: () => const SettingsScreen(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeftWithFade,
       transitionDuration: const Duration(milliseconds: 300),
     ),

@@ -35,15 +35,13 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
 
-    _slideUp = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-      ),
-    );
+    _slideUp = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
+          ),
+        );
 
     _controller.forward();
   }
@@ -67,14 +65,13 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               const Spacer(flex: 2),
 
-              // App Icon
+              // App Logo
               FadeTransition(
                 opacity: _fadeIn,
                 child: Container(
                   width: 90,
                   height: 90,
                   decoration: BoxDecoration(
-                    gradient: AppColors.accentGradient,
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
@@ -84,10 +81,12 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.work_history_rounded,
-                    size: 44,
-                    color: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -100,10 +99,11 @@ class _LoginScreenState extends State<LoginScreen>
                   opacity: _fadeIn,
                   child: Text(
                     AppConstants.appName,
-                    style: GoogleFonts.outfit(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimaryDark,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),
@@ -117,15 +117,16 @@ class _LoginScreenState extends State<LoginScreen>
                   opacity: _fadeIn,
                   child: Text(
                     AppConstants.appSubtitle,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.poppins(
                       fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.accent,
-                      letterSpacing: 1.5,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // Description
               SlideTransition(
@@ -133,12 +134,13 @@ class _LoginScreenState extends State<LoginScreen>
                 child: FadeTransition(
                   opacity: _fadeIn,
                   child: Text(
-                    'Manage your shifts, track earnings,\nand grow professionally.',
+                    'Manage your shifts with elegance.\nTrack earnings, track growth.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
                       color: AppColors.textSecondaryDark,
-                      height: 1.5,
+                      height: 1.6,
                     ),
                   ),
                 ),
@@ -151,79 +153,96 @@ class _LoginScreenState extends State<LoginScreen>
                 position: _slideUp,
                 child: FadeTransition(
                   opacity: _fadeIn,
-                  child: Obx(() => SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          onPressed: authController.isLoading.value
-                              ? null
-                              : () => authController.signInWithGoogle(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.primaryDark,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                  child: Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: authController.isLoading.value
+                            ? null
+                            : () => authController.signInWithGoogle(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryDark,
+                          elevation: 6,
+                          shadowColor: Colors.white.withValues(alpha: 0.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          child: authController.isLoading.value
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.primaryDark),
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Google G Logo (simplified)
-                                    Container(
-                                      width: 24,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'G',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF4285F4),
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Sign in with Google',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.primaryDark,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                         ),
-                      )),
+                        child: authController.isLoading.value
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.accent,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    '🔐',
+                                    style: TextStyle(fontSize: 22),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Sign in with Google',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryDark,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               // Hanuman/Devotional aesthetic
               FadeTransition(
                 opacity: _fadeIn,
-                child: Text(
-                  '🙏 जय श्री राम 🙏',
-                  style: GoogleFonts.outfit(
-                    fontSize: 13,
-                    color: AppColors.accent.withValues(alpha: 0.6),
-                    letterSpacing: 1,
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      '',
+                      style: GoogleFonts.poppins(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'You can do all this stuff\njust trust yourself ❤️',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.accent.withValues(alpha: 0.7),
+                        letterSpacing: 0.3,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.accent.withValues(alpha: 0.5),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 

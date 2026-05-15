@@ -9,7 +9,7 @@ import 'data/providers/hive_provider.dart';
 import 'routes/app_pages.dart';
 import 'routes/app_routes.dart';
 import 'bindings/initial_binding.dart';
-
+import 'controllers/theme_controller.dart';
 
 /// Entry point for VD Shift Manager application.
 /// Initializes Firebase, Hive, and sets up GetX navigation.
@@ -23,12 +23,14 @@ void main() async {
   ]);
 
   // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFF0A1628),
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Color(0xFF0A1628),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
 
   // Initialize Firebase
   try {
@@ -43,6 +45,10 @@ void main() async {
   await hiveProvider.init();
   Get.put(hiveProvider, permanent: true);
 
+  // Initialize Theme Controller
+  final themeController = ThemeController();
+  Get.put(themeController, permanent: true);
+
   runApp(const VDShiftManagerApp());
 }
 
@@ -52,14 +58,18 @@ class VDShiftManagerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeController = Get.find<ThemeController>();
+
     return GetMaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
 
-      // Theme configuration
+      // Theme configuration with reactive updates
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default to dark
+      themeMode: themeController.isDarkMode.value
+          ? ThemeMode.dark
+          : ThemeMode.light,
 
       // Navigation
       initialRoute: AppRoutes.splash,
@@ -79,9 +89,9 @@ class VDShiftManagerApp extends StatelessWidget {
       // Builder for global settings
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0),
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1.0)),
           child: child!,
         );
       },

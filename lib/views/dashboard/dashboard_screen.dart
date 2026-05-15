@@ -13,10 +13,37 @@ import '../../widgets/shift_card.dart';
 import '../../widgets/sync_indicator.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/premium_card.dart';
+import '../../widgets/stat_card.dart';
 
 /// Dashboard screen showing summary stats, live clocks, and recent shifts.
-class DashboardScreen extends StatelessWidget {
+/// Premium luxury design with animations and glassmorphism
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +52,7 @@ class DashboardScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.primaryDark : AppColors.surfaceLight,
+      backgroundColor: isDark ? AppColors.primaryDark : AppColors.surfaceLight,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
@@ -42,40 +68,58 @@ class DashboardScreen extends StatelessWidget {
               // ─── Header ────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '${Formatters.getGreeting()},',
-                            style: GoogleFonts.outfit(
-                              fontSize: 14,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Good ${_getTimeOfDay()},',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${AppConstants.userName} 👋',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimaryLight,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Welcome ${AppConstants.userName} 👋',
-                            style: GoogleFonts.outfit(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                          ),
+                          const SyncIndicator(),
                         ],
                       ),
-                      const SyncIndicator(),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Track shifts. Track growth.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.accent,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // ─── Live Clocks ───────────────────────────────
               SliverToBoxAdapter(
@@ -134,7 +178,8 @@ class DashboardScreen extends StatelessWidget {
                         EarningCard(
                           title: 'Weekly Earnings',
                           value: Formatters.formatCurrency(
-                              dashCtrl.weeklyEarnings.value),
+                            dashCtrl.weeklyEarnings.value,
+                          ),
                           icon: Icons.payments_outlined,
                           iconColor: AppColors.chartGreen,
                           index: 0,
@@ -142,7 +187,8 @@ class DashboardScreen extends StatelessWidget {
                         EarningCard(
                           title: 'Monthly Earnings',
                           value: Formatters.formatCurrency(
-                              dashCtrl.monthlyEarnings.value),
+                            dashCtrl.monthlyEarnings.value,
+                          ),
                           icon: Icons.account_balance_wallet_outlined,
                           iconColor: AppColors.accent,
                           index: 1,
@@ -150,7 +196,8 @@ class DashboardScreen extends StatelessWidget {
                         EarningCard(
                           title: 'Hours This Week',
                           value: Formatters.formatHoursMinutes(
-                              dashCtrl.totalHoursThisWeek.value),
+                            dashCtrl.totalHoursThisWeek.value,
+                          ),
                           icon: Icons.schedule_outlined,
                           iconColor: AppColors.chartBlue,
                           index: 2,
@@ -222,10 +269,9 @@ class DashboardScreen extends StatelessWidget {
                     }
 
                     return Column(
-                      children: dashCtrl.recentShifts
-                          .asMap()
-                          .entries
-                          .map((entry) {
+                      children: dashCtrl.recentShifts.asMap().entries.map((
+                        entry,
+                      ) {
                         return ShiftCard(
                           shift: entry.value,
                           index: entry.key,
@@ -233,8 +279,7 @@ class DashboardScreen extends StatelessWidget {
                             shiftCtrl.prepareEdit(entry.value);
                             Get.toNamed(AppRoutes.editShift);
                           },
-                          onDelete: () =>
-                              shiftCtrl.deleteShift(entry.value.id),
+                          onDelete: () => shiftCtrl.deleteShift(entry.value.id),
                         );
                       }).toList(),
                     );
@@ -245,8 +290,10 @@ class DashboardScreen extends StatelessWidget {
               // ─── Motivational Section ──────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -263,10 +310,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        const Text(
-                          '🙏',
-                          style: TextStyle(fontSize: 28),
-                        ),
+                        const Text('', style: TextStyle(fontSize: 28)),
                         const SizedBox(height: 8),
                         Text(
                           AppConstants.motivationalQuote,
@@ -281,7 +325,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'ॐ नमः शिवाय 🙏',
+                          '',
                           style: GoogleFonts.outfit(
                             fontSize: 12,
                             color: isDark
@@ -296,9 +340,7 @@ class DashboardScreen extends StatelessWidget {
               ),
 
               // Bottom padding
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 80),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           ),
         ),
@@ -311,10 +353,21 @@ class DashboardScreen extends StatelessWidget {
         icon: const Icon(Icons.add_rounded),
         label: Text(
           'Add Shift',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
         ),
         elevation: 4,
       ),
     );
+  }
+
+  String _getTimeOfDay() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Morning';
+    } else if (hour < 18) {
+      return 'Afternoon';
+    } else {
+      return 'Evening';
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../models/shift_model.dart';
 import '../providers/hive_provider.dart';
 import '../../services/sync_service.dart';
+import '../../services/auth_service.dart';
 
 /// Repository pattern implementation for shift data operations.
 /// Abstracts data source details from the business logic layer.
@@ -13,6 +14,9 @@ class ShiftRepository {
 
   /// Get sync service (lazy to avoid circular dependency)
   SyncService get _syncService => Get.find<SyncService>();
+
+  /// Get auth service
+  AuthService get _auth => Get.find<AuthService>();
 
   /// Create a new shift
   Future<ShiftModel> createShift({
@@ -25,9 +29,17 @@ class ShiftRepository {
     required double payPerHour,
     String? notes,
   }) async {
+    // Verify user is authenticated
+    if (!_auth.isLoggedIn) {
+      throw Exception('User must be logged in to create shifts');
+    }
+
     // Calculate derived values
-    final netHours =
-        ShiftModel.calculateNetHours(startTime, endTime, breakHours);
+    final netHours = ShiftModel.calculateNetHours(
+      startTime,
+      endTime,
+      breakHours,
+    );
     final totalPay = ShiftModel.calculateTotalPay(netHours, payPerHour);
     final now = DateTime.now();
 
@@ -50,6 +62,7 @@ class ShiftRepository {
 
     // 1. Save locally first (offline-first)
     await _hiveProvider.saveShift(shift);
+    print('[ShiftRepository] Shift created locally: ${shift.id}');
 
     // 2. Trigger cloud sync (non-blocking)
     _syncService.syncShift(shift);
@@ -72,8 +85,11 @@ class ShiftRepository {
     final existing = _hiveProvider.getShift(id);
     if (existing == null) throw Exception('Shift not found');
 
-    final netHours =
-        ShiftModel.calculateNetHours(startTime, endTime, breakHours);
+    final netHours = ShiftModel.calculateNetHours(
+      startTime,
+      endTime,
+      breakHours,
+    );
     final totalPay = ShiftModel.calculateTotalPay(netHours, payPerHour);
 
     final updatedShift = existing.copyWith(
