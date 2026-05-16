@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import '../data/repositories/shift_repository.dart';
 import '../models/shift_model.dart';
+import '../services/auth_service.dart';
 
 /// Controller for the Dashboard screen.
 /// Manages summary statistics, live clocks, and recent shifts.
@@ -28,6 +29,18 @@ class DashboardController extends GetxController {
 
   /// Loading state
   final RxBool isLoading = true.obs;
+
+  /// User display name (dynamic from auth)
+  String get userName {
+    try {
+      final auth = Get.find<AuthService>();
+      final name = auth.displayName;
+      // Return first name only
+      return name.split(' ').first;
+    } catch (_) {
+      return 'User';
+    }
+  }
 
   Timer? _clockTimer;
 
@@ -60,8 +73,7 @@ class DashboardController extends GetxController {
 
       // Recent shifts (last 5)
       final allShifts = _repository.getAllShifts();
-      recentShifts.value =
-          allShifts.take(5).toList();
+      recentShifts.value = allShifts.take(5).toList();
     } catch (e) {
       // Handle gracefully
     } finally {
@@ -85,30 +97,17 @@ class DashboardController extends GetxController {
     indiaTime.value = now.add(const Duration(hours: 5, minutes: 30));
 
     // London: UTC+0 (or UTC+1 during BST)
-    // BST: Last Sunday of March to last Sunday of October
     final isBST = _isBritishSummerTime(now);
-    londonTime.value = isBST
-        ? now.add(const Duration(hours: 1))
-        : now;
+    londonTime.value = isBST ? now.add(const Duration(hours: 1)) : now;
   }
 
   /// Check if current date falls in British Summer Time
   bool _isBritishSummerTime(DateTime utcNow) {
-    // BST starts last Sunday of March, ends last Sunday of October
     final year = utcNow.year;
-
-    // Find last Sunday of March
     final marchEnd = DateTime.utc(year, 3, 31);
-    final bstStart = marchEnd.subtract(
-      Duration(days: marchEnd.weekday % 7),
-    );
-
-    // Find last Sunday of October
+    final bstStart = marchEnd.subtract(Duration(days: marchEnd.weekday % 7));
     final octEnd = DateTime.utc(year, 10, 31);
-    final bstEnd = octEnd.subtract(
-      Duration(days: octEnd.weekday % 7),
-    );
-
+    final bstEnd = octEnd.subtract(Duration(days: octEnd.weekday % 7));
     return utcNow.isAfter(bstStart) && utcNow.isBefore(bstEnd);
   }
 

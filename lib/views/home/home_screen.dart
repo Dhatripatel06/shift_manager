@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColors.primaryLight : AppColors.primary;
 
     return Scaffold(
       body: AnimatedSwitcher(
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: isDark ? AppColors.surfaceDark : Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
               blurRadius: 20,
               offset: const Offset(0, -5),
             ),
@@ -50,10 +51,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
-                _buildNavItem(1, Icons.list_alt_rounded, 'Shifts'),
-                _buildNavItem(2, Icons.analytics_rounded, 'Stats'),
-                _buildNavItem(3, Icons.settings_rounded, 'Settings'),
+                _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard', primaryColor, isDark),
+                _buildNavItem(1, Icons.list_alt_rounded, 'Shifts', primaryColor, isDark),
+                _buildNavItem(2, Icons.analytics_rounded, 'Stats', primaryColor, isDark),
+                _buildNavItem(3, Icons.settings_rounded, 'Settings', primaryColor, isDark),
               ],
             ),
           ),
@@ -62,50 +63,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(int index, IconData icon, String label, Color activeColor, bool isDark) {
     final isSelected = _currentIndex == index;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 16 : 12,
-          vertical: 8,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.accent.withValues(alpha: 0.12)
-              : Colors.transparent,
+          color: isSelected ? activeColor.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected
-                  ? AppColors.accent
-                  : (isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight),
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.accent,
-                ),
-              ),
-            ],
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 22, color: isSelected ? activeColor : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
+          if (isSelected) ...[
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: activeColor)),
           ],
-        ),
+        ]),
       ),
     );
   }

@@ -1,21 +1,22 @@
-/// Application-wide constants for VD Shift Manager
+/// Application-wide constants for Shiftly
 class AppConstants {
   AppConstants._();
 
   // App Info
-  static const String appName = 'VD Shift Manager';
+  static const String appName = 'Shiftly';
   static const String appSubtitle = 'Track shifts. Track growth.';
   static const String appVersion = '1.0.0';
-  static const String userName = 'Vishrut';
 
   // Hive Box Names
   static const String shiftsBox = 'shifts_box';
   static const String settingsBox = 'settings_box';
   static const String syncBox = 'sync_box';
+  static const String userBox = 'user_box';
 
-  // Firestore Collections
-  static const String usersCollection = 'users';
-  static const String shiftsCollection = 'shifts';
+  // Firebase RTDB Paths
+  static const String usersPath = 'users';
+  static const String profilePath = 'profile';
+  static const String shiftsPath = 'shifts';
 
   // Settings Keys
   static const String themeKey = 'is_dark_mode';

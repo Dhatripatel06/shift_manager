@@ -32,13 +32,14 @@ class ShiftModelAdapter extends TypeAdapter<ShiftModel> {
       updatedAt: fields[12] as DateTime,
       isSynced: fields[13] as bool,
       isDeleted: fields[14] as bool,
+      userId: fields.containsKey(15) ? fields[15] as String : '',
     );
   }
 
   @override
   void write(BinaryWriter writer, ShiftModel obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class ShiftModelAdapter extends TypeAdapter<ShiftModel> {
       ..writeByte(13)
       ..write(obj.isSynced)
       ..writeByte(14)
-      ..write(obj.isDeleted);
+      ..write(obj.isDeleted)
+      ..writeByte(15)
+      ..write(obj.userId);
   }
 
   @override

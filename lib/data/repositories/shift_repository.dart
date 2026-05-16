@@ -7,7 +7,7 @@ import '../../services/auth_service.dart';
 
 /// Repository pattern implementation for shift data operations.
 /// Abstracts data source details from the business logic layer.
-/// Always saves to Hive first (offline-first), then triggers Firestore sync.
+/// Always saves to Hive first (offline-first), then triggers Firebase RTDB sync.
 class ShiftRepository {
   final HiveProvider _hiveProvider = Get.find<HiveProvider>();
   final _uuid = const Uuid();
@@ -45,6 +45,7 @@ class ShiftRepository {
 
     final shift = ShiftModel(
       id: _uuid.v4(),
+      userId: _auth.userId ?? '',
       date: date,
       eventName: eventName,
       jobRole: jobRole,
@@ -62,7 +63,7 @@ class ShiftRepository {
 
     // 1. Save locally first (offline-first)
     await _hiveProvider.saveShift(shift);
-    print('[ShiftRepository] Shift created locally: ${shift.id}');
+    debugPrint('[ShiftRepository] Shift created locally: ${shift.id}');
 
     // 2. Trigger cloud sync (non-blocking)
     _syncService.syncShift(shift);
@@ -160,4 +161,10 @@ class ShiftRepository {
   double calculateTotalHours(List<ShiftModel> shifts) {
     return shifts.fold(0.0, (sum, shift) => sum + shift.netHours);
   }
+}
+
+// Foundation import for debugPrint
+void debugPrint(String message) {
+  // ignore: avoid_print
+  print(message);
 }

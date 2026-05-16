@@ -3,6 +3,8 @@ import 'app_routes.dart';
 import 'auth_middleware.dart';
 import '../views/splash/splash_screen.dart';
 import '../views/auth/login_screen.dart';
+import '../views/auth/register_screen.dart';
+import '../views/auth/forgot_password_screen.dart';
 import '../views/home/home_screen.dart';
 import '../views/shift/add_shift_screen.dart';
 import '../views/shift/shift_list_screen.dart';
@@ -23,6 +25,18 @@ class AppPages {
       page: () => const LoginScreen(),
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 400),
+    ),
+    GetPage(
+      name: AppRoutes.register,
+      page: () => const RegisterScreen(),
+      transition: Transition.rightToLeftWithFade,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    GetPage(
+      name: AppRoutes.forgotPassword,
+      page: () => const ForgotPasswordScreen(),
+      transition: Transition.rightToLeftWithFade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: AppRoutes.home,

@@ -6,8 +6,8 @@ import '../../core/constants/app_constants.dart';
 import '../../services/auth_service.dart';
 import '../../routes/app_routes.dart';
 
-/// Splash screen with animated branding.
-/// Checks auth state and navigates accordingly.
+/// Splash screen with animated branding for Shiftly.
+/// Clean blue gradient background with animated logo.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -81,80 +81,89 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App Icon
-                FadeTransition(
-                  opacity: _fadeIn,
-                  child: ScaleTransition(
-                    scale: _scale,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.accentGradient,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accent.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: AppColors.splashGradient,
+        ),
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // App Icon
+                  FadeTransition(
+                    opacity: _fadeIn,
+                    child: ScaleTransition(
+                      scale: _scale,
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 30,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.work_history_rounded,
-                        size: 50,
-                        color: Colors.white,
+                        ),
+                        child: const Icon(
+                          Icons.schedule_rounded,
+                          size: 50,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // App Name
-                SlideTransition(
-                  position: _slideUp,
-                  child: FadeTransition(
-                    opacity: _fadeIn,
-                    child: Text(
-                      AppConstants.appName,
-                      style: GoogleFonts.outfit(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimaryDark,
-                        letterSpacing: 1,
+                  // App Name
+                  SlideTransition(
+                    position: _slideUp,
+                    child: FadeTransition(
+                      opacity: _fadeIn,
+                      child: Text(
+                        AppConstants.appName,
+                        style: GoogleFonts.outfit(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-                // Subtitle
-                SlideTransition(
-                  position: _slideUp,
-                  child: FadeTransition(
-                    opacity: _fadeIn,
-                    child: Text(
-                      AppConstants.appSubtitle,
-                      style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.accent,
-                        letterSpacing: 2,
+                  // Subtitle
+                  SlideTransition(
+                    position: _slideUp,
+                    child: FadeTransition(
+                      opacity: _fadeIn,
+                      child: Text(
+                        AppConstants.appSubtitle,
+                        style: GoogleFonts.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

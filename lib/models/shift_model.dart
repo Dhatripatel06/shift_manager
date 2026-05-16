@@ -4,6 +4,7 @@ part 'shift_model.g.dart';
 
 /// Shift model representing a single work shift entry.
 /// Stores all information about a shift including time, pay, and metadata.
+/// Each shift is tied to a specific user via [userId].
 @HiveType(typeId: 0)
 class ShiftModel extends HiveObject {
   @HiveField(0)
@@ -51,6 +52,9 @@ class ShiftModel extends HiveObject {
   @HiveField(14)
   final bool isDeleted;
 
+  @HiveField(15)
+  final String userId;
+
   ShiftModel({
     required this.id,
     required this.date,
@@ -67,6 +71,7 @@ class ShiftModel extends HiveObject {
     required this.updatedAt,
     this.isSynced = false,
     this.isDeleted = false,
+    this.userId = '',
   });
 
   /// Calculate total hours from start and end time
@@ -103,10 +108,11 @@ class ShiftModel extends HiveObject {
     return netHours * payPerHour;
   }
 
-  /// Convert to Firestore-compatible Map
-  Map<String, dynamic> toFirestoreMap() {
+  /// Convert to Firebase RTDB-compatible Map
+  Map<String, dynamic> toFirebaseMap() {
     return {
       'id': id,
+      'userId': userId,
       'date': date.toIso8601String(),
       'eventName': eventName,
       'jobRole': jobRole,
@@ -123,10 +129,11 @@ class ShiftModel extends HiveObject {
     };
   }
 
-  /// Create ShiftModel from Firestore document
-  factory ShiftModel.fromFirestoreMap(Map<String, dynamic> map) {
+  /// Create ShiftModel from Firebase RTDB document
+  factory ShiftModel.fromFirebaseMap(Map<String, dynamic> map) {
     return ShiftModel(
       id: map['id'] as String,
+      userId: map['userId'] as String? ?? '',
       date: DateTime.parse(map['date'] as String),
       eventName: map['eventName'] as String,
       jobRole: map['jobRole'] as String,
@@ -161,6 +168,7 @@ class ShiftModel extends HiveObject {
     DateTime? updatedAt,
     bool? isSynced,
     bool? isDeleted,
+    String? userId,
   }) {
     return ShiftModel(
       id: id ?? this.id,
@@ -178,6 +186,7 @@ class ShiftModel extends HiveObject {
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
       isDeleted: isDeleted ?? this.isDeleted,
+      userId: userId ?? this.userId,
     );
   }
 

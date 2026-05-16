@@ -11,7 +11,7 @@ import 'routes/app_routes.dart';
 import 'bindings/initial_binding.dart';
 import 'controllers/theme_controller.dart';
 
-/// Entry point for VD Shift Manager application.
+/// Entry point for Shiftly application.
 /// Initializes Firebase, Hive, and sets up GetX navigation.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,13 +22,13 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Set system UI overlay style
+  // Set system UI overlay style - clean light style for Shiftly
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF0A1628),
-      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
 
@@ -49,27 +49,23 @@ void main() async {
   final themeController = ThemeController();
   Get.put(themeController, permanent: true);
 
-  runApp(const VDShiftManagerApp());
+  runApp(const ShiftlyApp());
 }
 
 /// Root application widget
-class VDShiftManagerApp extends StatelessWidget {
-  const VDShiftManagerApp({super.key});
+class ShiftlyApp extends StatelessWidget {
+  const ShiftlyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
-
     return GetMaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
 
-      // Theme configuration with reactive updates
+      // Theme - light mode is primary for Shiftly's clean design
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: themeController.isDarkMode.value
-          ? ThemeMode.dark
-          : ThemeMode.light,
+      themeMode: ThemeMode.light,
 
       // Navigation
       initialRoute: AppRoutes.splash,

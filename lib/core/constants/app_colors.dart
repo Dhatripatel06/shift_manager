@@ -1,64 +1,64 @@
 import 'package:flutter/material.dart';
 
-/// Premium color palette for VD Shift Manager
-/// Theme: Dark Navy + Gold Professional
+/// Clean blue & white color palette for Shiftly
+/// Theme: Modern Productivity - Blue Gradients + White Background
 class AppColors {
   AppColors._();
 
-  // Primary - Deep Navy
-  static const Color primaryDark = Color(0xFF0A1628);
-  static const Color primary = Color(0xFF0F2140);
-  static const Color primaryLight = Color(0xFF1A3258);
+  // Primary - Soft Blue
+  static const Color primary = Color(0xFF2563EB);
+  static const Color primaryLight = Color(0xFF60A5FA);
+  static const Color primaryDark = Color(0xFF1D4ED8);
 
-  // Accent - Premium Gold
-  static const Color accent = Color(0xFFD4A04A);
-  static const Color accentLight = Color(0xFFE8C07A);
-  static const Color accentDark = Color(0xFFB8862E);
+  // Accent - Vibrant Blue
+  static const Color accent = Color(0xFF3B82F6);
+  static const Color accentLight = Color(0xFF93C5FD);
+  static const Color accentDark = Color(0xFF1E40AF);
+
+  // Surface Colors (Light Mode - Primary)
+  static const Color surfaceLight = Color(0xFFF8FAFC);
+  static const Color cardLight = Color(0xFFFFFFFF);
+  static const Color cardLightElevated = Color(0xFFF1F5F9);
 
   // Surface Colors (Dark Mode)
-  static const Color surfaceDark = Color(0xFF111B2E);
-  static const Color cardDark = Color(0xFF162038);
-  static const Color cardDarkElevated = Color(0xFF1C2A48);
-
-  // Surface Colors (Light Mode)
-  static const Color surfaceLight = Color(0xFFF5F5F7);
-  static const Color cardLight = Color(0xFFFFFFFF);
-  static const Color cardLightElevated = Color(0xFFF0F0F5);
+  static const Color surfaceDark = Color(0xFF0F172A);
+  static const Color cardDark = Color(0xFF1E293B);
+  static const Color cardDarkElevated = Color(0xFF334155);
 
   // Text Colors
-  static const Color textPrimaryDark = Color(0xFFE8E8F0);
-  static const Color textSecondaryDark = Color(0xFF8A8FA8);
-  static const Color textPrimaryLight = Color(0xFF1A1A2E);
-  static const Color textSecondaryLight = Color(0xFF6B7085);
+  static const Color textPrimaryLight = Color(0xFF0F172A);
+  static const Color textSecondaryLight = Color(0xFF64748B);
+  static const Color textPrimaryDark = Color(0xFFF1F5F9);
+  static const Color textSecondaryDark = Color(0xFF94A3B8);
 
   // Status Colors
-  static const Color success = Color(0xFF2ECC71);
-  static const Color warning = Color(0xFFF39C12);
-  static const Color error = Color(0xFFE74C3C);
-  static const Color info = Color(0xFF3498DB);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error = Color(0xFFEF4444);
+  static const Color info = Color(0xFF06B6D4);
 
   // Chart Colors
-  static const Color chartBlue = Color(0xFF4A90D9);
-  static const Color chartGreen = Color(0xFF27AE60);
-  static const Color chartOrange = Color(0xFFE67E22);
-  static const Color chartPurple = Color(0xFF9B59B6);
-  static const Color chartCyan = Color(0xFF1ABC9C);
+  static const Color chartBlue = Color(0xFF3B82F6);
+  static const Color chartGreen = Color(0xFF10B981);
+  static const Color chartOrange = Color(0xFFF97316);
+  static const Color chartPurple = Color(0xFF8B5CF6);
+  static const Color chartCyan = Color(0xFF06B6D4);
 
-  // Gradient - Primary
+  // Gradient - Primary Blue
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [primary, primaryLight],
   );
 
-  // Gradient - Accent/Gold
+  // Gradient - Accent Blue
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [accentDark, accent, accentLight],
+    colors: [primaryDark, primary, primaryLight],
   );
 
-  // Gradient - Card
+  // Gradient - Card (Dark)
   static const LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -69,6 +69,13 @@ class AppColors {
   static const LinearGradient earningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF1A3258), Color(0xFF0F2140)],
+    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+  );
+
+  // Gradient - Splash/Login background
+  static const LinearGradient splashGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF1E40AF), Color(0xFF2563EB), Color(0xFF3B82F6)],
   );
 }

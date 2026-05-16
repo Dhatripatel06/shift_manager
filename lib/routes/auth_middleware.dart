@@ -11,7 +11,7 @@ class AuthMiddleware extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     final authService = Get.find<AuthService>();
     if (!authService.isLoggedIn) {
-      print(
+      debugPrint(
         '[AuthMiddleware] Redirecting unauthenticated user from $route to login',
       );
       return const RouteSettings(name: '/login');
