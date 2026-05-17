@@ -33,10 +33,33 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            // PRODUCTION: Replace these with your actual keystore properties
+            // To create a keystore: keytool -genkey -v -keystore ~/shiftly-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias shiftly
+            // Set environment variables: SHIFTLY_KEYSTORE_PATH, SHIFTLY_KEYSTORE_PASS, SHIFTLY_KEY_ALIAS, SHIFTLY_KEY_PASS
+            val keystorePath = System.getenv("SHIFTLY_KEYSTORE_PATH") ?: "shiftly-release.jks"
+            val keystorePassword = System.getenv("SHIFTLY_KEYSTORE_PASS") ?: ""
+            val keyAlias = System.getenv("SHIFTLY_KEY_ALIAS") ?: "shiftly"
+            val keyPassword = System.getenv("SHIFTLY_KEY_PASS") ?: ""
+            
+            if (keystorePassword.isNotEmpty() && keyPassword.isNotEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = keyAlias
+                keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
             signingConfig = signingConfigs.getByName("debug")
         }
     }

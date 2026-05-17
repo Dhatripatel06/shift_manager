@@ -2,13 +2,20 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../models/shift_model.dart';
 import '../../core/constants/app_constants.dart';
+import '../../services/auth_service.dart';
 
 /// Hive local database provider.
-/// Handles all local CRUD operations for shifts.
-/// This is the primary data source in our offline-first architecture.
+/// Handles all local CRUD operations for shifts with user isolation.
+/// Ensures each user only sees their own shifts in local cache.
 class HiveProvider extends GetxService {
   late Box<ShiftModel> _shiftsBox;
   late Box<dynamic> _settingsBox;
+
+  /// Get auth service for current user ID
+  AuthService get _auth => Get.find<AuthService>();
+
+  /// Get current user ID
+  String get _currentUserId => _auth.userId ?? '';
 
   /// Initialize Hive boxes
   Future<HiveProvider> init() async {
@@ -38,21 +45,26 @@ class HiveProvider extends GetxService {
     return _shiftsBox.get(id);
   }
 
-  /// Get all active shifts (not deleted), sorted by date descending
+  /// Get all active shifts for CURRENT USER ONLY (not deleted), sorted by date descending
   List<ShiftModel> getAllShifts() {
+    final userId = _currentUserId;
     final shifts = _shiftsBox.values
-        .where((shift) => !shift.isDeleted)
+        .where((shift) => !shift.isDeleted && shift.userId == userId)
         .toList();
     shifts.sort((a, b) => b.date.compareTo(a.date));
     return shifts;
   }
 
-  /// Get shifts for a specific date range
+  /// Get shifts for a specific date range (current user only)
   List<ShiftModel> getShiftsByDateRange(DateTime start, DateTime end) {
-    return getAllShifts().where((shift) {
-      return shift.date.isAfter(start.subtract(const Duration(days: 1))) &&
-          shift.date.isBefore(end.add(const Duration(days: 1)));
-    }).toList();
+    final userId = _currentUserId;
+    return _shiftsBox.values
+        .where((shift) => !shift.isDeleted && shift.userId == userId)
+        .where((shift) {
+          return shift.date.isAfter(start.subtract(const Duration(days: 1))) &&
+              shift.date.isBefore(end.add(const Duration(days: 1)));
+        })
+        .toList();
   }
 
   /// Get shifts for today
@@ -60,10 +72,12 @@ class HiveProvider extends GetxService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     return getAllShifts()
-        .where((s) =>
-            s.date.year == today.year &&
-            s.date.month == today.month &&
-            s.date.day == today.day)
+        .where(
+          (s) =>
+              s.date.year == today.year &&
+              s.date.month == today.month &&
+              s.date.day == today.day,
+        )
         .toList();
   }
 
@@ -71,7 +85,11 @@ class HiveProvider extends GetxService {
   List<ShiftModel> getThisWeekShifts() {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final start = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+    final start = DateTime(
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
+    );
     final end = start.add(const Duration(days: 7));
     return getShiftsByDateRange(start, end);
   }
@@ -102,9 +120,12 @@ class HiveProvider extends GetxService {
     await _shiftsBox.delete(id);
   }
 
-  /// Get all unsynced shifts
+  /// Get all unsynced shifts for current user
   List<ShiftModel> getUnsyncedShifts() {
-    return _shiftsBox.values.where((shift) => !shift.isSynced).toList();
+    final userId = _currentUserId;
+    return _shiftsBox.values
+        .where((shift) => shift.userId == userId && !shift.isSynced)
+        .toList();
   }
 
   /// Mark a shift as synced
@@ -115,21 +136,33 @@ class HiveProvider extends GetxService {
     }
   }
 
-  /// Search shifts by event name or job role
+  /// Search shifts by event name or job role (current user only)
   List<ShiftModel> searchShifts(String query) {
+    final userId = _currentUserId;
     final lowerQuery = query.toLowerCase();
-    return getAllShifts().where((shift) {
-      return shift.eventName.toLowerCase().contains(lowerQuery) ||
-          shift.jobRole.toLowerCase().contains(lowerQuery);
-    }).toList();
+    return _shiftsBox.values
+        .where((shift) => !shift.isDeleted && shift.userId == userId)
+        .where((shift) {
+          return shift.eventName.toLowerCase().contains(lowerQuery) ||
+              shift.jobRole.toLowerCase().contains(lowerQuery);
+        })
+        .toList();
   }
 
   /// Get total shift count
   int get shiftCount => getAllShifts().length;
 
-  /// Clear all shifts (use with caution!)
+  /// Clear all shifts for current user (doesn't clear other users' data)
   Future<void> clearAllShifts() async {
-    await _shiftsBox.clear();
+    final userId = _currentUserId;
+    final keysToDelete = _shiftsBox.values
+        .where((shift) => shift.userId == userId)
+        .map((shift) => shift.id)
+        .toList();
+
+    for (final key in keysToDelete) {
+      await _shiftsBox.delete(key);
+    }
   }
 
   // ─── Settings Operations ───────────────────────────────────

@@ -1,21 +1,20 @@
 import 'dart:async';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/shift_model.dart';
-import '../core/constants/app_constants.dart';
 import 'auth_service.dart';
 import 'connectivity_service.dart';
+import 'firestore_service.dart';
 import '../data/providers/hive_provider.dart';
 
 /// Sync status enum
 enum SyncStatus { synced, syncing, offline, error }
 
 /// Service that handles bidirectional sync between Hive (local) and
-/// Firebase Realtime Database (cloud).
+/// Cloud Firestore (cloud).
 /// Implements offline-first architecture: always save locally first, then sync.
 class SyncService extends GetxService {
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final FirestoreService _firestoreService = Get.find<FirestoreService>();
 
   /// Observable sync status
   final Rx<SyncStatus> syncStatus = SyncStatus.offline.obs;
@@ -53,14 +52,6 @@ class SyncService extends GetxService {
     _syncTimer = Timer.periodic(const Duration(minutes: 5), (_) => syncAll());
   }
 
-  /// Get Firebase RTDB reference for user's shifts
-  DatabaseReference _shiftsRef() {
-    final uid = _auth.userId;
-    if (uid == null) throw Exception('User not authenticated');
-    return _database.ref(
-        '${AppConstants.usersPath}/$uid/${AppConstants.shiftsPath}');
-  }
-
   /// Sync all unsynced shifts to Firebase RTDB
   Future<void> syncAll() async {
     if (!_connectivity.isConnected.value || !_auth.isLoggedIn) {
@@ -93,7 +84,7 @@ class SyncService extends GetxService {
     }
   }
 
-  /// Push all unsynced local shifts to Firebase RTDB
+  /// Push all unsynced local shifts to Cloud Firestore
   Future<void> _pushLocalChanges() async {
     final unsyncedShifts = _hiveProvider.getUnsyncedShifts();
 
@@ -103,23 +94,12 @@ class SyncService extends GetxService {
     }
 
     debugPrint(
-        '[SyncService] Pushing ${unsyncedShifts.length} unsynced shifts...');
-
-    final updates = <String, dynamic>{};
-
-    for (final shift in unsyncedShifts) {
-      if (shift.isDeleted) {
-        // Will remove after batch
-        updates[shift.id] = null;
-        debugPrint('[SyncService] Queued delete for shift ${shift.id}');
-      } else {
-        updates[shift.id] = shift.toFirebaseMap();
-        debugPrint('[SyncService] Queued write for shift ${shift.id}');
-      }
-    }
+      '[SyncService] Pushing ${unsyncedShifts.length} unsynced shifts...',
+    );
 
     try {
-      await _shiftsRef().update(updates);
+      // Batch write all unsynced shifts to Firestore
+      await _firestoreService.batchWriteShifts(unsyncedShifts);
       debugPrint('[SyncService] Batch update successful');
 
       // Mark all as synced locally
@@ -131,37 +111,31 @@ class SyncService extends GetxService {
         }
       }
       debugPrint(
-          '[SyncService] Marked ${unsyncedShifts.length} shifts as synced');
+        '[SyncService] Marked ${unsyncedShifts.length} shifts as synced',
+      );
     } catch (e) {
       debugPrint('[SyncService] ERROR in batch update: $e');
       rethrow;
     }
   }
 
-  /// Pull remote changes from Firebase RTDB
+  /// Pull remote changes from Cloud Firestore (current user only)
   Future<void> _pullRemoteChanges() async {
     try {
-      final snapshot = await _shiftsRef().get();
+      // Get real-time stream and take first snapshot
+      final remoteShifts = await _firestoreService.watchAllShifts().first;
 
-      if (!snapshot.exists || snapshot.value == null) return;
-
-      final data = Map<String, dynamic>.from(snapshot.value as Map);
-
-      for (final entry in data.entries) {
+      for (final remoteShift in remoteShifts) {
         try {
-          final remoteShift = ShiftModel.fromFirebaseMap(
-              Map<String, dynamic>.from(entry.value as Map));
           final localShift = _hiveProvider.getShift(remoteShift.id);
 
           if (localShift == null) {
             // New shift from cloud
-            await _hiveProvider
-                .saveShift(remoteShift.copyWith(isSynced: true));
+            await _hiveProvider.saveShift(remoteShift.copyWith(isSynced: true));
           } else if (remoteShift.updatedAt.isAfter(localShift.updatedAt) &&
               localShift.isSynced) {
             // Remote is newer and local hasn't been modified
-            await _hiveProvider
-                .saveShift(remoteShift.copyWith(isSynced: true));
+            await _hiveProvider.saveShift(remoteShift.copyWith(isSynced: true));
           }
           // If local is newer (unsynced), keep local version
         } catch (e) {
@@ -184,8 +158,7 @@ class SyncService extends GetxService {
 
     if (!_auth.isLoggedIn) {
       pendingSyncCount.value++;
-      debugPrint(
-          '[SyncService] User not authenticated for shift ${shift.id}');
+      debugPrint('[SyncService] User not authenticated for shift ${shift.id}');
       return;
     }
 
@@ -203,17 +176,17 @@ class SyncService extends GetxService {
     while (retries < maxRetries) {
       try {
         if (shift.isDeleted) {
-          await _shiftsRef().child(shift.id).remove();
+          await _firestoreService.deleteShift(shift.id);
           await _hiveProvider.permanentlyDeleteShift(shift.id);
-          debugPrint(
-              '[SyncService] Successfully deleted shift ${shift.id}');
+          debugPrint('[SyncService] Successfully deleted shift ${shift.id}');
         } else {
-          await _shiftsRef().child(shift.id).set(shift.toFirebaseMap());
+          await _firestoreService.createShift(shift);
           await _hiveProvider.markAsSynced(shift.id);
           debugPrint(
             '[SyncService] Successfully synced shift ${shift.id} for user $userId',
           );
         }
+        pendingSyncCount.value--;
         return; // Success - exit retry loop
       } catch (e) {
         retries++;
@@ -225,8 +198,7 @@ class SyncService extends GetxService {
         if (retries < maxRetries) {
           // Exponential backoff: 500ms, 1s, 2s
           final delay = Duration(milliseconds: 500 * (1 << (retries - 1)));
-          debugPrint(
-              '[SyncService] Retrying in ${delay.inMilliseconds}ms...');
+          debugPrint('[SyncService] Retrying in ${delay.inMilliseconds}ms...');
           await Future.delayed(delay);
         }
       }
@@ -239,7 +211,7 @@ class SyncService extends GetxService {
     );
   }
 
-  /// Full restore from Firebase RTDB (for reinstall scenarios)
+  /// Full restore from Cloud Firestore (for reinstall scenarios)
   Future<int> fullRestore() async {
     if (!_connectivity.isConnected.value || !_auth.isLoggedIn) {
       throw Exception('Cannot restore: No internet or not logged in');
@@ -248,24 +220,18 @@ class SyncService extends GetxService {
     try {
       syncStatus.value = SyncStatus.syncing;
 
-      final snapshot = await _shiftsRef().get();
+      // Get all shifts from Firestore
+      final remoteShifts = await _firestoreService.watchAllShifts().first;
       int restoredCount = 0;
 
-      if (snapshot.exists && snapshot.value != null) {
-        final data = Map<String, dynamic>.from(snapshot.value as Map);
-
-        for (final entry in data.entries) {
-          try {
-            final shift = ShiftModel.fromFirebaseMap(
-                Map<String, dynamic>.from(entry.value as Map));
-            if (!shift.isDeleted) {
-              await _hiveProvider
-                  .saveShift(shift.copyWith(isSynced: true));
-              restoredCount++;
-            }
-          } catch (e) {
-            debugPrint('[SyncService] Error restoring shift: $e');
+      for (final shift in remoteShifts) {
+        try {
+          if (!shift.isDeleted) {
+            await _hiveProvider.saveShift(shift.copyWith(isSynced: true));
+            restoredCount++;
           }
+        } catch (e) {
+          debugPrint('[SyncService] Error restoring shift: $e');
         }
       }
 

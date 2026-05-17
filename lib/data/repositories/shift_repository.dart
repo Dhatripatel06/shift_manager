@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/shift_model.dart';
@@ -63,7 +64,9 @@ class ShiftRepository {
 
     // 1. Save locally first (offline-first)
     await _hiveProvider.saveShift(shift);
-    debugPrint('[ShiftRepository] Shift created locally: ${shift.id}');
+    debugPrint(
+      '[ShiftRepository] Shift created locally for user ${shift.userId}: ${shift.id}',
+    );
 
     // 2. Trigger cloud sync (non-blocking)
     _syncService.syncShift(shift);
@@ -110,6 +113,7 @@ class ShiftRepository {
 
     // 1. Save locally first
     await _hiveProvider.saveShift(updatedShift);
+    debugPrint('[ShiftRepository] Shift updated locally: ${updatedShift.id}');
 
     // 2. Trigger cloud sync
     _syncService.syncShift(updatedShift);
@@ -121,6 +125,7 @@ class ShiftRepository {
   Future<void> deleteShift(String id) async {
     // 1. Soft delete locally first
     await _hiveProvider.softDeleteShift(id);
+    debugPrint('[ShiftRepository] Shift soft-deleted: $id');
 
     // 2. Sync deletion to cloud
     final shift = _hiveProvider.getShift(id);
@@ -161,10 +166,4 @@ class ShiftRepository {
   double calculateTotalHours(List<ShiftModel> shifts) {
     return shifts.fold(0.0, (sum, shift) => sum + shift.netHours);
   }
-}
-
-// Foundation import for debugPrint
-void debugPrint(String message) {
-  // ignore: avoid_print
-  print(message);
 }

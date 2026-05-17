@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../data/repositories/shift_repository.dart';
 import '../models/shift_model.dart';
+import '../services/sync_service.dart';
 import '../controllers/dashboard_controller.dart';
 
 /// Filter type for shift list
@@ -37,8 +38,14 @@ class ShiftController extends GetxController {
 
   /// Form state
   final Rx<DateTime> selectedDate = DateTime.now().obs;
-  final Rx<TimeOfDay> selectedStartTime = const TimeOfDay(hour: 9, minute: 0).obs;
-  final Rx<TimeOfDay> selectedEndTime = const TimeOfDay(hour: 17, minute: 0).obs;
+  final Rx<TimeOfDay> selectedStartTime = const TimeOfDay(
+    hour: 9,
+    minute: 0,
+  ).obs;
+  final Rx<TimeOfDay> selectedEndTime = const TimeOfDay(
+    hour: 17,
+    minute: 0,
+  ).obs;
   final RxDouble calculatedNetHours = 0.0.obs;
   final RxDouble calculatedTotalPay = 0.0.obs;
 
@@ -49,11 +56,45 @@ class ShiftController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadShifts();
+    _initializeShifts();
 
     // React to filter and search changes
     ever(currentFilter, (_) => _applyFilters());
     ever(searchQuery, (_) => _applyFilters());
+  }
+
+  /// Initialize shifts: restore from Firestore if Hive is empty
+  Future<void> _initializeShifts() async {
+    isLoading.value = true;
+    try {
+      // Load from local cache first
+      final localShifts = _repository.getAllShifts();
+      shifts.value = localShifts;
+
+      // If Hive is empty, restore from Firestore
+      if (localShifts.isEmpty) {
+        debugPrint(
+          '[ShiftController] Hive is empty, restoring from Firestore...',
+        );
+        try {
+          final syncService = Get.find<SyncService>();
+          final restoredCount = await syncService.fullRestore();
+          debugPrint(
+            '[ShiftController] Restored $restoredCount shifts from Firestore',
+          );
+
+          // Reload shifts after restoration
+          shifts.value = _repository.getAllShifts();
+        } catch (e) {
+          debugPrint('[ShiftController] Restore failed: $e');
+          // Silently fail - shifts might be syncing
+        }
+      }
+
+      _applyFilters();
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   /// Load all shifts
@@ -115,15 +156,18 @@ class ShiftController extends GetxController {
     final endStr =
         '${selectedEndTime.value.hour.toString().padLeft(2, '0')}:${selectedEndTime.value.minute.toString().padLeft(2, '0')}';
 
-    final breakHrs =
-        double.tryParse(breakHoursController.text) ?? 0.0;
-    final payRate =
-        double.tryParse(payPerHourController.text) ?? 0.0;
+    final breakHrs = double.tryParse(breakHoursController.text) ?? 0.0;
+    final payRate = double.tryParse(payPerHourController.text) ?? 0.0;
 
-    calculatedNetHours.value =
-        ShiftModel.calculateNetHours(startStr, endStr, breakHrs);
-    calculatedTotalPay.value =
-        ShiftModel.calculateTotalPay(calculatedNetHours.value, payRate);
+    calculatedNetHours.value = ShiftModel.calculateNetHours(
+      startStr,
+      endStr,
+      breakHrs,
+    );
+    calculatedTotalPay.value = ShiftModel.calculateTotalPay(
+      calculatedNetHours.value,
+      payRate,
+    );
   }
 
   /// Add a new shift

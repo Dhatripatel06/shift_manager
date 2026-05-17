@@ -58,14 +58,15 @@ class ShiftlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeCtrl = Get.find<ThemeController>();
     return GetMaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
 
-      // Theme - light mode is primary for Shiftly's clean design
+      // Theme - reactive dark/light mode support
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeCtrl.isDarkMode.value ? ThemeMode.dark : ThemeMode.light,
 
       // Navigation
       initialRoute: AppRoutes.splash,

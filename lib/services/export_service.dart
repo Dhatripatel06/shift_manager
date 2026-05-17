@@ -7,9 +7,62 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../models/shift_model.dart';
 import '../utils/formatters.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service for exporting shift data to CSV and PDF formats
 class ExportService extends GetxService {
+  /// Get the appropriate directory for exports (Downloads folder)
+  Future<Directory> _getExportDirectory() async {
+    try {
+      if (Platform.isAndroid) {
+        // Android: Save to shared Downloads folder
+        // Path: /storage/emulated/0/Download/
+        try {
+          // Get external storage root
+          final externalStorageDir = await getExternalStorageDirectory();
+          if (externalStorageDir != null) {
+            // Navigate up from /Android/data/app-id/files to /storage/emulated/0
+            final downloadsPath =
+                externalStorageDir.path.split('/Android/data')[0] + '/Download';
+            final downloadsDir = Directory(downloadsPath);
+
+            // Create Download folder if it doesn't exist
+            if (!await downloadsDir.exists()) {
+              await downloadsDir.create(recursive: true);
+            }
+
+            debugPrint(
+              '[ExportService] Using Android Downloads directory: ${downloadsDir.path}',
+            );
+            return downloadsDir;
+          }
+        } catch (e) {
+          debugPrint('[ExportService] Downloads dir failed: $e');
+        }
+
+        // Fallback to app documents directory
+        final documentsDir = await getApplicationDocumentsDirectory();
+        debugPrint(
+          '[ExportService] Fallback to documents directory: ${documentsDir.path}',
+        );
+        return documentsDir;
+      } else if (Platform.isIOS) {
+        // iOS: Save to Documents folder (user accessible via Files app)
+        final documentsDir = await getApplicationDocumentsDirectory();
+        debugPrint(
+          '[ExportService] Using iOS Documents directory: ${documentsDir.path}',
+        );
+        return documentsDir;
+      } else {
+        // Other platforms: Use documents directory
+        return await getApplicationDocumentsDirectory();
+      }
+    } catch (e) {
+      debugPrint('[ExportService] Error getting export directory: $e');
+      return await getApplicationDocumentsDirectory();
+    }
+  }
+
   /// Export shifts to CSV file and return the file path
   Future<String> exportToCsv(List<ShiftModel> shifts) async {
     try {
@@ -45,13 +98,15 @@ class ExportService extends GetxService {
 
       final csvData = const ListToCsvConverter().convert([headers, ...rows]);
 
-      final directory = await getApplicationDocumentsDirectory();
+      final directory = await _getExportDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final file = File('${directory.path}/vd_shifts_$timestamp.csv');
+      final file = File('${directory.path}/shiftly_$timestamp.csv');
       await file.writeAsString(csvData);
 
+      debugPrint('[ExportService] CSV exported to: ${file.path}');
       return file.path;
     } catch (e) {
+      debugPrint('[ExportService] CSV export failed: $e');
       throw Exception('CSV export failed: $e');
     }
   }
@@ -62,10 +117,8 @@ class ExportService extends GetxService {
       final pdf = pw.Document();
 
       // Calculate summary
-      final totalEarnings =
-          shifts.fold(0.0, (sum, s) => sum + s.totalPay);
-      final totalHours =
-          shifts.fold(0.0, (sum, s) => sum + s.netHours);
+      final totalEarnings = shifts.fold(0.0, (sum, s) => sum + s.totalPay);
+      final totalHours = shifts.fold(0.0, (sum, s) => sum + s.netHours);
 
       pdf.addPage(
         pw.MultiPage(
@@ -83,13 +136,15 @@ class ExportService extends GetxService {
         ),
       );
 
-      final directory = await getApplicationDocumentsDirectory();
+      final directory = await _getExportDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final file = File('${directory.path}/vd_shifts_$timestamp.pdf');
+      final file = File('${directory.path}/shiftly_$timestamp.pdf');
       await file.writeAsBytes(await pdf.save());
 
+      debugPrint('[ExportService] PDF exported to: ${file.path}');
       return file.path;
     } catch (e) {
+      debugPrint('[ExportService] PDF export failed: $e');
       throw Exception('PDF export failed: $e');
     }
   }
@@ -110,7 +165,7 @@ class ExportService extends GetxService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'VD Shift Manager',
+                'shiftly',
                 style: pw.TextStyle(
                   fontSize: 22,
                   fontWeight: pw.FontWeight.bold,
@@ -119,7 +174,7 @@ class ExportService extends GetxService {
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                'Shift Report - Vishrut Donda',
+                'Shift Report ',
                 style: const pw.TextStyle(
                   fontSize: 12,
                   color: PdfColors.grey700,
@@ -129,10 +184,7 @@ class ExportService extends GetxService {
           ),
           pw.Text(
             'Generated: ${Formatters.formatDate(DateTime.now())}',
-            style: const pw.TextStyle(
-              fontSize: 10,
-              color: PdfColors.grey600,
-            ),
+            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
           ),
         ],
       ),
@@ -141,7 +193,10 @@ class ExportService extends GetxService {
 
   /// Build PDF summary section
   pw.Widget _buildPdfSummary(
-      double totalEarnings, double totalHours, int shiftCount) {
+    double totalEarnings,
+    double totalHours,
+    int shiftCount,
+  ) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
@@ -152,10 +207,11 @@ class ExportService extends GetxService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
           _buildPdfSummaryItem('Total Shifts', shiftCount.toString()),
+          _buildPdfSummaryItem('Total Hours', totalHours.toStringAsFixed(1)),
           _buildPdfSummaryItem(
-              'Total Hours', totalHours.toStringAsFixed(1)),
-          _buildPdfSummaryItem(
-              'Total Earnings', '£${totalEarnings.toStringAsFixed(2)}'),
+            'Total Earnings',
+            '£${totalEarnings.toStringAsFixed(2)}',
+          ),
         ],
       ),
     );
@@ -175,10 +231,7 @@ class ExportService extends GetxService {
         pw.SizedBox(height: 4),
         pw.Text(
           label,
-          style: const pw.TextStyle(
-            fontSize: 10,
-            color: PdfColors.grey600,
-          ),
+          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
         ),
       ],
     );
@@ -193,9 +246,7 @@ class ExportService extends GetxService {
         fontSize: 9,
         color: PdfColors.white,
       ),
-      headerDecoration: const pw.BoxDecoration(
-        color: PdfColors.blueGrey800,
-      ),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
       cellStyle: const pw.TextStyle(fontSize: 8),
       cellHeight: 28,
       cellAlignments: {
@@ -236,17 +287,11 @@ class ExportService extends GetxService {
         children: [
           pw.Text(
             'VD Shift Manager',
-            style: const pw.TextStyle(
-              fontSize: 8,
-              color: PdfColors.grey500,
-            ),
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
           ),
           pw.Text(
             'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: const pw.TextStyle(
-              fontSize: 8,
-              color: PdfColors.grey500,
-            ),
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
           ),
         ],
       ),

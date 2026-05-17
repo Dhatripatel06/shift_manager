@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import '../services/connectivity_service.dart';
+import '../services/firestore_service.dart';
 import '../services/sync_service.dart';
 import '../services/export_service.dart';
 import '../controllers/auth_controller.dart';
@@ -13,6 +14,7 @@ class InitialBinding extends Bindings {
     // Core services (permanent - survive navigation)
     Get.put(AuthService(), permanent: true);
     Get.put(ConnectivityService(), permanent: true);
+    Get.put(FirestoreService(), permanent: true);
     Get.put(SyncService(), permanent: true);
     Get.put(ExportService(), permanent: true);
 
