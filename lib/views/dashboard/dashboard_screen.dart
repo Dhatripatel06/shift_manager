@@ -129,7 +129,7 @@ class DashboardScreen extends StatelessWidget {
                       border: Border.all(color: primaryColor.withValues(alpha: 0.1)),
                     ),
                     child: Column(children: [
-                      const Text('🙏', style: TextStyle(fontSize: 28)),
+                      Icon(Icons.schedule_rounded, size: 28, color: primaryColor),
                       const SizedBox(height: 8),
                       Text(AppConstants.motivationalQuote, textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w500, color: primaryColor, fontStyle: FontStyle.italic, height: 1.5)),
                     ]),

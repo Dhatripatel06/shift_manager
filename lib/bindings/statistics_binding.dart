@@ -5,6 +5,8 @@ import '../controllers/statistics_controller.dart';
 class StatisticsBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => StatisticsController());
+    if (!Get.isRegistered<StatisticsController>()) {
+      Get.lazyPut(() => StatisticsController(), fenix: true);
+    }
   }
 }

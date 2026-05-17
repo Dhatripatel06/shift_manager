@@ -1,9 +1,11 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -18,8 +20,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
     }
 
     defaultConfig {
@@ -40,21 +44,28 @@ android {
             // Set environment variables: SHIFTLY_KEYSTORE_PATH, SHIFTLY_KEYSTORE_PASS, SHIFTLY_KEY_ALIAS, SHIFTLY_KEY_PASS
             val keystorePath = System.getenv("SHIFTLY_KEYSTORE_PATH") ?: "shiftly-release.jks"
             val keystorePassword = System.getenv("SHIFTLY_KEYSTORE_PASS") ?: ""
-            val keyAlias = System.getenv("SHIFTLY_KEY_ALIAS") ?: "shiftly"
-            val keyPassword = System.getenv("SHIFTLY_KEY_PASS") ?: ""
+            val keyAliasName = System.getenv("SHIFTLY_KEY_ALIAS") ?: "shiftly"
+            val keyPasswordValue = System.getenv("SHIFTLY_KEY_PASS") ?: ""
             
-            if (keystorePassword.isNotEmpty() && keyPassword.isNotEmpty()) {
+            if (keystorePassword.isNotEmpty() && keyPasswordValue.isNotEmpty()) {
                 storeFile = file(keystorePath)
                 storePassword = keystorePassword
-                keyAlias = keyAlias
-                keyPassword = keyPassword
+                keyAlias = keyAliasName
+                keyPassword = keyPasswordValue
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (
+                System.getenv("SHIFTLY_KEYSTORE_PASS").isNullOrEmpty() ||
+                System.getenv("SHIFTLY_KEY_PASS").isNullOrEmpty()
+            ) {
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -67,4 +78,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.android.play:feature-delivery:2.1.0")
 }

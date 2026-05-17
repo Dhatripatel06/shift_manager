@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/shift_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/widgets/responsive_page.dart';
 import '../../utils/formatters.dart';
 
 /// Add/Edit shift form screen with date/time pickers and auto-calculations.
@@ -29,12 +30,17 @@ class AddShiftScreen extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
       ),
-      body: Form(
-        key: formKey,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
+      body: SafeArea(
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.only(
+              top: 20,
+              bottom: 20 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: ResponsivePage(
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ─── Date Picker ─────────────────────────────
@@ -72,10 +78,8 @@ class AddShiftScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // ─── Time Pickers ────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
+              _buildAdaptivePair(
+                Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('Start Time', isDark),
@@ -86,15 +90,12 @@ class AddShiftScreen extends StatelessWidget {
                               (time) {
                                 controller.selectedStartTime.value = time;
                                 controller.calculatePreview();
-                              },
-                              isDark,
-                            )),
+                          },
+                          isDark,
+                        )),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+                Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('End Time', isDark),
@@ -105,21 +106,17 @@ class AddShiftScreen extends StatelessWidget {
                               (time) {
                                 controller.selectedEndTime.value = time;
                                 controller.calculatePreview();
-                              },
-                              isDark,
-                            )),
+                          },
+                          isDark,
+                        )),
                       ],
                     ),
-                  ),
-                ],
               ),
               const SizedBox(height: 20),
 
               // ─── Break Hours ─────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
+              _buildAdaptivePair(
+                Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('Break Hours', isDark),
@@ -136,13 +133,10 @@ class AddShiftScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
+                Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('Pay Per Hour (£)', isDark),
+                        _buildSectionLabel('Pay Per Hour (GBP)', isDark),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: controller.payPerHourController,
@@ -158,8 +152,6 @@ class AddShiftScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                ],
               ),
               const SizedBox(height: 20),
 
@@ -237,6 +229,8 @@ class AddShiftScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             ],
+              ),
+            ),
           ),
         ),
       ),
@@ -255,6 +249,31 @@ class AddShiftScreen extends StatelessWidget {
             ? AppColors.textSecondaryDark
             : AppColors.textSecondaryLight,
       ),
+    );
+  }
+
+  Widget _buildAdaptivePair(Widget first, Widget second) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 420) {
+          return Column(
+            children: [
+              first,
+              const SizedBox(height: 20),
+              second,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 16),
+            Expanded(child: second),
+          ],
+        );
+      },
     );
   }
 

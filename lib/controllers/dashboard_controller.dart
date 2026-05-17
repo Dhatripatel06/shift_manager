@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:get/get.dart';
-import '../data/repositories/shift_repository.dart';
+import '../domain/repositories/shift_repository_contract.dart';
 import '../models/shift_model.dart';
 import '../services/auth_service.dart';
 
 /// Controller for the Dashboard screen.
 /// Manages summary statistics, live clocks, and recent shifts.
 class DashboardController extends GetxController {
-  final ShiftRepository _repository = ShiftRepository();
+  final IShiftRepository _repository = Get.find<IShiftRepository>();
 
   // ─── Observable State ──────────────────────────────────────
 

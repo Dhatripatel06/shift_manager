@@ -7,8 +7,8 @@ import '../core/theme/app_theme.dart';
 class ThemeController extends GetxController {
   final HiveProvider _hiveProvider = Get.find<HiveProvider>();
 
-  /// Observable dark mode state
-  final RxBool isDarkMode = true.obs;
+  /// Observable dark mode state - defaults to light theme
+  final RxBool isDarkMode = false.obs;
 
   @override
   void onInit() {

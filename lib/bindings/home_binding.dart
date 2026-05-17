@@ -6,7 +6,11 @@ import '../controllers/shift_controller.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => DashboardController());
-    Get.lazyPut(() => ShiftController());
+    if (!Get.isRegistered<DashboardController>()) {
+      Get.lazyPut(() => DashboardController(), fenix: true);
+    }
+    if (!Get.isRegistered<ShiftController>()) {
+      Get.lazyPut(() => ShiftController(), fenix: true);
+    }
   }
 }

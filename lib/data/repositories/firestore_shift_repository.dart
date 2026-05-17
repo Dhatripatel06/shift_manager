@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
+import '../../core/services/app_logger.dart';
 import '../../models/shift_model.dart';
 import '../providers/hive_provider.dart';
 import '../../services/firestore_service.dart';
@@ -58,21 +59,23 @@ class FirestoreShiftRepository {
 
       // 1. Save locally first (offline-first)
       await _hiveProvider.saveShift(shift);
-      print('[Repository] Shift created locally: ${shift.id}');
+      AppLogger.debug('[Repository] Shift created locally: ${shift.id}');
 
       // 2. Try to sync to Firestore (non-blocking)
       try {
         await _firestoreService.createShift(shift);
         await _hiveProvider.markAsSynced(shift.id);
-        print('[Repository] Shift synced to Firestore: ${shift.id}');
+        AppLogger.debug('[Repository] Shift synced to Firestore: ${shift.id}');
       } catch (e) {
-        print('[Repository] Firestore sync failed, data saved locally: $e');
+        AppLogger.debug(
+          '[Repository] Firestore sync failed, data saved locally: $e',
+        );
         // Data is safe in Hive, will retry later
       }
 
       return shift;
     } catch (e) {
-      print('[Repository] Error creating shift: $e');
+      AppLogger.debug('[Repository] Error creating shift: $e');
       rethrow;
     }
   }
@@ -117,20 +120,20 @@ class FirestoreShiftRepository {
 
       // 1. Update locally
       await _hiveProvider.saveShift(updatedShift);
-      print('[Repository] Shift updated locally: $id');
+      AppLogger.debug('[Repository] Shift updated locally: $id');
 
       // 2. Sync to Firestore
       try {
         await _firestoreService.updateShift(updatedShift);
         await _hiveProvider.markAsSynced(id);
-        print('[Repository] Shift synced to Firestore: $id');
+        AppLogger.debug('[Repository] Shift synced to Firestore: $id');
       } catch (e) {
-        print('[Repository] Firestore sync failed: $e');
+        AppLogger.debug('[Repository] Firestore sync failed: $e');
       }
 
       return updatedShift;
     } catch (e) {
-      print('[Repository] Error updating shift: $e');
+      AppLogger.debug('[Repository] Error updating shift: $e');
       rethrow;
     }
   }
@@ -146,9 +149,9 @@ class FirestoreShiftRepository {
 
       // 2. Soft delete in Firestore
       await _firestoreService.deleteShift(id);
-      print('[Repository] Shift deleted: $id');
+      AppLogger.debug('[Repository] Shift deleted: $id');
     } catch (e) {
-      print('[Repository] Error deleting shift: $e');
+      AppLogger.debug('[Repository] Error deleting shift: $e');
       rethrow;
     }
   }
@@ -169,7 +172,7 @@ class FirestoreShiftRepository {
       }
       return firestoreShift;
     } catch (e) {
-      print('[Repository] Error fetching shift: $e');
+      AppLogger.debug('[Repository] Error fetching shift: $e');
       return null;
     }
   }
@@ -228,7 +231,7 @@ class FirestoreShiftRepository {
     try {
       return await _firestoreService.searchByEventName(query);
     } catch (e) {
-      print('[Repository] Search error: $e');
+      AppLogger.debug('[Repository] Search error: $e');
       // Fallback to local search
       return getAllShifts().where((shift) {
         return shift.eventName.toLowerCase().contains(query.toLowerCase()) ||
@@ -245,7 +248,7 @@ class FirestoreShiftRepository {
     try {
       return await _firestoreService.getShiftsByDateRange(start, end);
     } catch (e) {
-      print('[Repository] Date range query error: $e');
+      AppLogger.debug('[Repository] Date range query error: $e');
       return getAllShifts().where((shift) {
         return shift.date.isAfter(start) && shift.date.isBefore(end);
       }).toList();
@@ -274,10 +277,10 @@ class FirestoreShiftRepository {
         await _hiveProvider.markAsSynced(shift.id);
       }
 
-      print('[Repository] Synced ${unsynced.length} shifts');
+      AppLogger.debug('[Repository] Synced ${unsynced.length} shifts');
       return unsynced.length;
     } catch (e) {
-      print('[Repository] Sync error: $e');
+      AppLogger.debug('[Repository] Sync error: $e');
       return 0;
     }
   }
@@ -295,10 +298,12 @@ class FirestoreShiftRepository {
         await _hiveProvider.saveShift(shift);
       }
 
-      print('[Repository] Restored ${allShifts.length} shifts from Firestore');
+      AppLogger.debug(
+        '[Repository] Restored ${allShifts.length} shifts from Firestore',
+      );
       return allShifts.length;
     } catch (e) {
-      print('[Repository] Restore error: $e');
+      AppLogger.debug('[Repository] Restore error: $e');
       rethrow;
     }
   }

@@ -179,7 +179,7 @@ class HiveProvider extends GetxService {
 
   /// Get dark mode preference
   bool get isDarkMode =>
-      _settingsBox.get(AppConstants.themeKey, defaultValue: true) as bool;
+      _settingsBox.get(AppConstants.themeKey, defaultValue: false) as bool;
 
   /// Set dark mode preference
   Future<void> setDarkMode(bool value) async {

@@ -5,6 +5,8 @@ import '../controllers/shift_controller.dart';
 class ShiftBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => ShiftController());
+    if (!Get.isRegistered<ShiftController>()) {
+      Get.lazyPut(() => ShiftController(), fenix: true);
+    }
   }
 }

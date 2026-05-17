@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import '../core/config/app_environment.dart';
 import '../models/shift_model.dart';
 import '../models/user_profile_model.dart';
 import 'auth_service.dart';
@@ -21,6 +22,7 @@ class FirestoreException implements Exception {
 class FirestoreService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _auth = Get.find<AuthService>();
+  static const Duration _requestTimeout = AppEnvironment.networkTimeout;
 
   /// Firestore connection state
   final RxBool isConnected = true.obs;
@@ -143,7 +145,10 @@ class FirestoreService extends GetxService {
       final firestoreData = shift.toFirebaseMap();
       firestoreData['userId'] = _userId;
 
-      await _getShiftsRef().doc(shift.id).set(firestoreData);
+      await _getShiftsRef()
+          .doc(shift.id)
+          .set(firestoreData)
+          .timeout(_requestTimeout);
 
       debugPrint('[Firestore] Shift created: ${shift.id}');
       return shift;
@@ -157,7 +162,9 @@ class FirestoreService extends GetxService {
   /// Get single shift
   Future<ShiftModel?> getShift(String shiftId) async {
     try {
-      final doc = await _getShiftsRef().doc(shiftId).get();
+      final doc = await _getShiftsRef().doc(shiftId).get().timeout(
+            _requestTimeout,
+          );
       if (!doc.exists) return null;
       return ShiftModel.fromFirebaseMap(doc.data() as Map<String, dynamic>);
     } on FirebaseException catch (e) {
@@ -173,7 +180,10 @@ class FirestoreService extends GetxService {
       final firestoreData = shift.toFirebaseMap();
       firestoreData['userId'] = _userId;
 
-      await _getShiftsRef().doc(shift.id).update(firestoreData);
+      await _getShiftsRef()
+          .doc(shift.id)
+          .update(firestoreData)
+          .timeout(_requestTimeout);
 
       debugPrint('[Firestore] Shift updated: ${shift.id}');
       return shift;
@@ -192,7 +202,7 @@ class FirestoreService extends GetxService {
       await _getShiftsRef().doc(shiftId).update({
         'isDeleted': true,
         'updatedAt': DateTime.now().toIso8601String(),
-      });
+      }).timeout(_requestTimeout);
 
       debugPrint('[Firestore] Shift deleted: $shiftId');
     } on FirebaseException catch (e) {
@@ -214,11 +224,7 @@ class FirestoreService extends GetxService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map(
-                (doc) => ShiftModel.fromFirebaseMap(
-                  doc.data() as Map<String, dynamic>,
-                ),
-              )
+              .map((doc) => ShiftModel.fromFirebaseMap(doc.data()))
               .toList();
         })
         .handleError((error) {
@@ -236,11 +242,7 @@ class FirestoreService extends GetxService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map(
-                (doc) => ShiftModel.fromFirebaseMap(
-                  doc.data() as Map<String, dynamic>,
-                ),
-              )
+              .map((doc) => ShiftModel.fromFirebaseMap(doc.data()))
               .toList();
         });
   }
@@ -260,13 +262,11 @@ class FirestoreService extends GetxService {
           .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
           .where('date', isLessThanOrEqualTo: end.toIso8601String())
           .orderBy('date', descending: true)
-          .get();
+          .get()
+          .timeout(_requestTimeout);
 
       return snapshot.docs
-          .map(
-            (doc) =>
-                ShiftModel.fromFirebaseMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ShiftModel.fromFirebaseMap(doc.data()))
           .toList();
     } on FirebaseException catch (e) {
       throw FirestoreException('Failed to fetch shifts by date', code: e.code);
@@ -279,16 +279,14 @@ class FirestoreService extends GetxService {
       final snapshot = await _getShiftsRef()
           .where('isDeleted', isEqualTo: false)
           .where('eventName', isGreaterThanOrEqualTo: query)
-          .where('eventName', isLessThan: query + 'z')
+          .where('eventName', isLessThan: '${query}z')
           .orderBy('eventName')
           .orderBy('date', descending: true)
-          .get();
+          .get()
+          .timeout(_requestTimeout);
 
       return snapshot.docs
-          .map(
-            (doc) =>
-                ShiftModel.fromFirebaseMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ShiftModel.fromFirebaseMap(doc.data()))
           .toList();
     } on FirebaseException catch (e) {
       throw FirestoreException('Search failed', code: e.code);
@@ -301,7 +299,7 @@ class FirestoreService extends GetxService {
     DocumentSnapshot? lastDoc,
   }) async {
     try {
-      Query query = _getShiftsRef()
+      Query<Map<String, dynamic>> query = _getShiftsRef()
           .where('isDeleted', isEqualTo: false)
           .orderBy('date', descending: true)
           .limit(pageSize);
@@ -310,12 +308,9 @@ class FirestoreService extends GetxService {
         query = query.startAfterDocument(lastDoc);
       }
 
-      final snapshot = await query.get();
+      final snapshot = await query.get().timeout(_requestTimeout);
       return snapshot.docs
-          .map(
-            (doc) =>
-                ShiftModel.fromFirebaseMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ShiftModel.fromFirebaseMap(doc.data()))
           .toList();
     } on FirebaseException catch (e) {
       throw FirestoreException('Pagination failed', code: e.code);
@@ -331,7 +326,8 @@ class FirestoreService extends GetxService {
     try {
       final snapshot = await _getShiftsRef()
           .where('isDeleted', isEqualTo: false)
-          .get();
+          .get()
+          .timeout(_requestTimeout);
 
       double total = 0;
       for (var doc in snapshot.docs) {
@@ -351,7 +347,8 @@ class FirestoreService extends GetxService {
           .where('isDeleted', isEqualTo: false)
           .where('date', isGreaterThanOrEqualTo: start.toIso8601String())
           .where('date', isLessThanOrEqualTo: end.toIso8601String())
-          .get();
+          .get()
+          .timeout(_requestTimeout);
 
       double total = 0;
       for (var doc in snapshot.docs) {
@@ -384,7 +381,7 @@ class FirestoreService extends GetxService {
         );
       }
 
-      await batch.commit();
+      await batch.commit().timeout(_requestTimeout);
       debugPrint('[Firestore] Batch write completed: ${shifts.length} shifts');
     } on FirebaseException catch (e) {
       throw FirestoreException('Batch write failed', code: e.code);
@@ -403,7 +400,7 @@ class FirestoreService extends GetxService {
         batch.update(_getShiftsRef().doc(id), {'isDeleted': true});
       }
 
-      await batch.commit();
+      await batch.commit().timeout(_requestTimeout);
       debugPrint(
         '[Firestore] Batch delete completed: ${shiftIds.length} shifts',
       );
@@ -435,7 +432,7 @@ class FirestoreService extends GetxService {
         firestoreData['userId'] = _userId;
 
         transaction.update(docRef, firestoreData);
-      });
+      }).timeout(_requestTimeout);
 
       debugPrint('[Firestore] Transactional update completed: ${shift.id}');
     } on FirebaseException catch (e) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../data/repositories/shift_repository.dart';
+import '../core/errors/app_exception.dart';
+import '../core/validation/input_validator.dart';
+import '../domain/repositories/shift_repository_contract.dart';
 import '../models/shift_model.dart';
 import '../services/sync_service.dart';
 import '../controllers/dashboard_controller.dart';
@@ -10,7 +12,7 @@ enum ShiftFilter { all, daily, weekly, monthly }
 
 /// Controller for Shift CRUD operations and list management.
 class ShiftController extends GetxController {
-  final ShiftRepository _repository = ShiftRepository();
+  final IShiftRepository _repository = Get.find<IShiftRepository>();
 
   // ─── Observable State ──────────────────────────────────────
 
@@ -180,14 +182,31 @@ class ShiftController extends GetxController {
       final endStr =
           '${selectedEndTime.value.hour.toString().padLeft(2, '0')}:${selectedEndTime.value.minute.toString().padLeft(2, '0')}';
 
+      final eventName = InputValidator.requiredText(
+        eventNameController.text,
+        'Event name',
+      );
+      final jobRole = InputValidator.requiredText(
+        jobRoleController.text,
+        'Job role',
+      );
+      final breakHours = InputValidator.nonNegativeDouble(
+        breakHoursController.text.isEmpty ? '0' : breakHoursController.text,
+        'Break hours',
+      );
+      final payPerHour = InputValidator.nonNegativeDouble(
+        payPerHourController.text,
+        'Pay per hour',
+      );
+
       await _repository.createShift(
         date: selectedDate.value,
-        eventName: eventNameController.text.trim(),
-        jobRole: jobRoleController.text.trim(),
+        eventName: eventName,
+        jobRole: jobRole,
         startTime: startStr,
         endTime: endStr,
-        breakHours: double.tryParse(breakHoursController.text) ?? 0.0,
-        payPerHour: double.tryParse(payPerHourController.text) ?? 0.0,
+        breakHours: breakHours,
+        payPerHour: payPerHour,
         notes: notesController.text.trim().isEmpty
             ? null
             : notesController.text.trim(),
@@ -198,7 +217,7 @@ class ShiftController extends GetxController {
       _clearForm();
 
       Get.snackbar(
-        'Success ✨',
+        'Success',
         'Shift added successfully!',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.withValues(alpha: 0.8),
@@ -207,10 +226,20 @@ class ShiftController extends GetxController {
       );
 
       return true;
+    } on AppException catch (e) {
+      Get.snackbar(
+        'Error',
+        e.message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to add shift: $e',
+        'Failed to add shift. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
@@ -232,15 +261,32 @@ class ShiftController extends GetxController {
       final endStr =
           '${selectedEndTime.value.hour.toString().padLeft(2, '0')}:${selectedEndTime.value.minute.toString().padLeft(2, '0')}';
 
+      final eventName = InputValidator.requiredText(
+        eventNameController.text,
+        'Event name',
+      );
+      final jobRole = InputValidator.requiredText(
+        jobRoleController.text,
+        'Job role',
+      );
+      final breakHours = InputValidator.nonNegativeDouble(
+        breakHoursController.text.isEmpty ? '0' : breakHoursController.text,
+        'Break hours',
+      );
+      final payPerHour = InputValidator.nonNegativeDouble(
+        payPerHourController.text,
+        'Pay per hour',
+      );
+
       await _repository.updateShift(
         id: editingShiftId.value,
         date: selectedDate.value,
-        eventName: eventNameController.text.trim(),
-        jobRole: jobRoleController.text.trim(),
+        eventName: eventName,
+        jobRole: jobRole,
         startTime: startStr,
         endTime: endStr,
-        breakHours: double.tryParse(breakHoursController.text) ?? 0.0,
-        payPerHour: double.tryParse(payPerHourController.text) ?? 0.0,
+        breakHours: breakHours,
+        payPerHour: payPerHour,
         notes: notesController.text.trim().isEmpty
             ? null
             : notesController.text.trim(),
@@ -251,7 +297,7 @@ class ShiftController extends GetxController {
       _clearForm();
 
       Get.snackbar(
-        'Updated ✅',
+        'Updated',
         'Shift updated successfully!',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green.withValues(alpha: 0.8),
@@ -260,10 +306,20 @@ class ShiftController extends GetxController {
       );
 
       return true;
+    } on AppException catch (e) {
+      Get.snackbar(
+        'Error',
+        e.message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to update shift: $e',
+        'Failed to update shift. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
@@ -309,10 +365,16 @@ class ShiftController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16),
         );
+      } on AppException catch (e) {
+        Get.snackbar(
+          'Error',
+          e.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
       } catch (e) {
         Get.snackbar(
           'Error',
-          'Failed to delete shift',
+          'Failed to delete shift. Please try again.',
           snackPosition: SnackPosition.BOTTOM,
         );
       }

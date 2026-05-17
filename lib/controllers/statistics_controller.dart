@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import '../data/repositories/shift_repository.dart';
+import '../domain/repositories/shift_repository_contract.dart';
 import '../models/shift_model.dart';
 
 /// Data model for chart data points
@@ -13,7 +13,7 @@ class ChartDataPoint {
 /// Controller for the Statistics screen.
 /// Provides weekly and monthly earning/hours data for chart visualization.
 class StatisticsController extends GetxController {
-  final ShiftRepository _repository = ShiftRepository();
+  final IShiftRepository _repository = Get.find<IShiftRepository>();
 
   // ─── Observable State ──────────────────────────────────────
 
@@ -55,11 +55,14 @@ class StatisticsController extends GetxController {
           _repository.calculateTotalEarnings(allShifts);
       totalHoursAllTime.value = _repository.calculateTotalHours(allShifts);
 
-      if (allShifts.isNotEmpty) {
+      if (allShifts.isNotEmpty && totalHoursAllTime.value > 0) {
         averagePayPerHour.value =
             totalEarningsAllTime.value / totalHoursAllTime.value;
         averageHoursPerShift.value =
             totalHoursAllTime.value / allShifts.length;
+      } else {
+        averagePayPerHour.value = 0;
+        averageHoursPerShift.value = 0;
       }
 
       // Weekly earnings (last 7 days)

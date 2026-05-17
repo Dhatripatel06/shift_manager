@@ -131,24 +131,50 @@ class ShiftModel extends HiveObject {
 
   /// Create ShiftModel from Firebase RTDB document
   factory ShiftModel.fromFirebaseMap(Map<String, dynamic> map) {
+    final id = map['id'] as String?;
+    final date = map['date'] as String?;
+    final eventName = map['eventName'] as String?;
+    final jobRole = map['jobRole'] as String?;
+    final startTime = map['startTime'] as String?;
+    final endTime = map['endTime'] as String?;
+    final createdAt = map['createdAt'] as String?;
+    final updatedAt = map['updatedAt'] as String?;
+
+    if (id == null ||
+        date == null ||
+        eventName == null ||
+        jobRole == null ||
+        startTime == null ||
+        endTime == null ||
+        createdAt == null ||
+        updatedAt == null) {
+      throw FormatException('Invalid shift payload: missing required fields');
+    }
+
     return ShiftModel(
-      id: map['id'] as String,
+      id: id,
       userId: map['userId'] as String? ?? '',
-      date: DateTime.parse(map['date'] as String),
-      eventName: map['eventName'] as String,
-      jobRole: map['jobRole'] as String,
-      startTime: map['startTime'] as String,
-      endTime: map['endTime'] as String,
-      breakHours: (map['breakHours'] as num).toDouble(),
-      netHours: (map['netHours'] as num).toDouble(),
-      payPerHour: (map['payPerHour'] as num).toDouble(),
-      totalPay: (map['totalPay'] as num).toDouble(),
+      date: DateTime.parse(date),
+      eventName: eventName,
+      jobRole: jobRole,
+      startTime: startTime,
+      endTime: endTime,
+      breakHours: _readDouble(map['breakHours']),
+      netHours: _readDouble(map['netHours']),
+      payPerHour: _readDouble(map['payPerHour']),
+      totalPay: _readDouble(map['totalPay']),
       notes: map['notes'] as String?,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: DateTime.parse(map['updatedAt'] as String),
+      createdAt: DateTime.parse(createdAt),
+      updatedAt: DateTime.parse(updatedAt),
       isSynced: true,
       isDeleted: (map['isDeleted'] as bool?) ?? false,
     );
+  }
+
+  static double _readDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0;
+    return 0;
   }
 
   /// Create a copy with updated fields
@@ -193,6 +219,6 @@ class ShiftModel extends HiveObject {
   @override
   String toString() {
     return 'ShiftModel(id: $id, date: $date, event: $eventName, role: $jobRole, '
-        'net: ${netHours}h, pay: £$totalPay)';
+        'net: ${netHours}h, pay: GBP $totalPay)';
   }
 }

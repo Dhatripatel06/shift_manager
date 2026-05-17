@@ -23,7 +23,7 @@ class ExportService extends GetxService {
           if (externalStorageDir != null) {
             // Navigate up from /Android/data/app-id/files to /storage/emulated/0
             final downloadsPath =
-                externalStorageDir.path.split('/Android/data')[0] + '/Download';
+                '${externalStorageDir.path.split('/Android/data')[0]}/Download';
             final downloadsDir = Directory(downloadsPath);
 
             // Create Download folder if it doesn't exist

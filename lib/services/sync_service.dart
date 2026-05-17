@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/shift_model.dart';
+import '../core/services/app_logger.dart';
 import 'auth_service.dart';
 import 'connectivity_service.dart';
 import 'firestore_service.dart';
@@ -66,7 +67,7 @@ class SyncService extends GetxService {
 
     try {
       syncStatus.value = SyncStatus.syncing;
-      debugPrint('[SyncService] Starting sync...');
+      AppLogger.debug('[SyncService] Starting sync...');
 
       // 1. Push local changes
       await _pushLocalChanges();
@@ -76,11 +77,12 @@ class SyncService extends GetxService {
 
       syncStatus.value = SyncStatus.synced;
       lastSyncTime.value = DateTime.now();
-      pendingSyncCount.value = 0;
-      debugPrint('[SyncService] Sync completed successfully');
+      _refreshPendingCount();
+      AppLogger.debug('[SyncService] Sync completed successfully');
     } catch (e) {
       syncStatus.value = SyncStatus.error;
-      debugPrint('[SyncService] ERROR during syncAll: $e');
+      _refreshPendingCount();
+      AppLogger.debug('[SyncService] ERROR during syncAll: $e');
     }
   }
 
@@ -151,20 +153,20 @@ class SyncService extends GetxService {
   /// Sync a single shift immediately with retry logic
   Future<void> syncShift(ShiftModel shift) async {
     if (!_connectivity.isConnected.value) {
-      pendingSyncCount.value++;
+      _refreshPendingCount();
       debugPrint('[SyncService] No connectivity for shift ${shift.id}');
       return;
     }
 
     if (!_auth.isLoggedIn) {
-      pendingSyncCount.value++;
+      _refreshPendingCount();
       debugPrint('[SyncService] User not authenticated for shift ${shift.id}');
       return;
     }
 
     final userId = _auth.userId;
     if (userId == null) {
-      pendingSyncCount.value++;
+      _refreshPendingCount();
       debugPrint('[SyncService] User UID is null for shift ${shift.id}');
       return;
     }
@@ -186,7 +188,7 @@ class SyncService extends GetxService {
             '[SyncService] Successfully synced shift ${shift.id} for user $userId',
           );
         }
-        pendingSyncCount.value--;
+        _refreshPendingCount();
         return; // Success - exit retry loop
       } catch (e) {
         retries++;
@@ -205,10 +207,18 @@ class SyncService extends GetxService {
     }
 
     // All retries exhausted
-    pendingSyncCount.value++;
+    _refreshPendingCount();
     debugPrint(
       '[SyncService] FAILED to sync shift ${shift.id} after $maxRetries attempts',
     );
+  }
+
+  void _refreshPendingCount() {
+    try {
+      pendingSyncCount.value = _hiveProvider.getUnsyncedShifts().length;
+    } catch (_) {
+      pendingSyncCount.value = 0;
+    }
   }
 
   /// Full restore from Cloud Firestore (for reinstall scenarios)

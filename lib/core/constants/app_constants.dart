@@ -30,7 +30,7 @@ class AppConstants {
 
   // Motivational Quote
   static const String motivationalQuote =
-      'You can do all this stuff, just trust yourself ❤️';
+      'You can do all this stuff, just trust yourself.';
 
   // Default Pay Rate
   static const double defaultPayPerHour = 12.0;
