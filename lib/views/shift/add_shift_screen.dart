@@ -8,23 +8,30 @@ import '../../core/widgets/responsive_page.dart';
 import '../../utils/formatters.dart';
 
 /// Add/Edit shift form screen with date/time pickers and auto-calculations.
-class AddShiftScreen extends StatelessWidget {
+class AddShiftScreen extends StatefulWidget {
   const AddShiftScreen({super.key});
+
+  @override
+  State<AddShiftScreen> createState() => _AddShiftScreenState();
+}
+
+class _AddShiftScreenState extends State<AddShiftScreen> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ShiftController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final formKey = GlobalKey<FormState>();
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.primaryDark : AppColors.surfaceLight,
+      backgroundColor: isDark ? AppColors.primaryDark : AppColors.surfaceLight,
       appBar: AppBar(
-        title: Obx(() => Text(
-              controller.isEditing.value ? 'Edit Shift' : 'Add New Shift',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-            )),
+        title: Obx(
+          () => Text(
+            controller.isEditing.value ? 'Edit Shift' : 'Add New Shift',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => Get.back(),
@@ -32,7 +39,7 @@ class AddShiftScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Form(
-          key: formKey,
+          key: _formKey,
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: EdgeInsets.only(
@@ -41,82 +48,86 @@ class AddShiftScreen extends StatelessWidget {
             ),
             child: ResponsivePage(
               child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ─── Date Picker ─────────────────────────────
-              _buildSectionLabel('Date', isDark),
-              const SizedBox(height: 8),
-              Obx(() => _buildDatePicker(context, controller, isDark)),
-              const SizedBox(height: 20),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ─── Date Picker ─────────────────────────────
+                  _buildSectionLabel('Date', isDark),
+                  const SizedBox(height: 8),
+                  Obx(() => _buildDatePicker(context, controller, isDark)),
+                  const SizedBox(height: 20),
 
-              // ─── Event Name ──────────────────────────────
-              _buildSectionLabel('Event Name', isDark),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller.eventNameController,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Concert at O2 Arena',
-                  prefixIcon: Icon(Icons.event_outlined),
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 20),
+                  // ─── Event Name ──────────────────────────────
+                  _buildSectionLabel('Event Name', isDark),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.eventNameController,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Concert at O2 Arena',
+                      prefixIcon: Icon(Icons.event_outlined),
+                    ),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 20),
 
-              // ─── Job Role ────────────────────────────────
-              _buildSectionLabel('Job Role', isDark),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller.jobRoleController,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Bar Staff, Runner, Security',
-                  prefixIcon: Icon(Icons.badge_outlined),
-                ),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 20),
+                  // ─── Job Role ────────────────────────────────
+                  _buildSectionLabel('Job Role', isDark),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.jobRoleController,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Bar Staff, Runner, Security',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                    ),
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Required' : null,
+                  ),
+                  const SizedBox(height: 20),
 
-              // ─── Time Pickers ────────────────────────────
-              _buildAdaptivePair(
-                Column(
+                  // ─── Time Pickers ────────────────────────────
+                  _buildAdaptivePair(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('Start Time', isDark),
                         const SizedBox(height: 8),
-                        Obx(() => _buildTimePicker(
-                              context,
-                              controller.selectedStartTime.value,
-                              (time) {
-                                controller.selectedStartTime.value = time;
-                                controller.calculatePreview();
-                          },
-                          isDark,
-                        )),
+                        Obx(
+                          () => _buildTimePicker(
+                            context,
+                            controller.selectedStartTime.value,
+                            (time) {
+                              controller.selectedStartTime.value = time;
+                              controller.calculatePreview();
+                            },
+                            isDark,
+                          ),
+                        ),
                       ],
                     ),
-                Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('End Time', isDark),
                         const SizedBox(height: 8),
-                        Obx(() => _buildTimePicker(
-                              context,
-                              controller.selectedEndTime.value,
-                              (time) {
-                                controller.selectedEndTime.value = time;
-                                controller.calculatePreview();
-                          },
-                          isDark,
-                        )),
+                        Obx(
+                          () => _buildTimePicker(
+                            context,
+                            controller.selectedEndTime.value,
+                            (time) {
+                              controller.selectedEndTime.value = time;
+                              controller.calculatePreview();
+                            },
+                            isDark,
+                          ),
+                        ),
                       ],
                     ),
-              ),
-              const SizedBox(height: 20),
+                  ),
+                  const SizedBox(height: 20),
 
-              // ─── Break Hours ─────────────────────────────
-              _buildAdaptivePair(
-                Column(
+                  // ─── Break Hours ─────────────────────────────
+                  _buildAdaptivePair(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('Break Hours', isDark),
@@ -124,7 +135,8 @@ class AddShiftScreen extends StatelessWidget {
                         TextFormField(
                           controller: controller.breakHoursController,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(
                             hintText: '0.0',
                             prefixIcon: Icon(Icons.coffee_outlined),
@@ -133,7 +145,7 @@ class AddShiftScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionLabel('Pay Per Hour (GBP)', isDark),
@@ -141,7 +153,8 @@ class AddShiftScreen extends StatelessWidget {
                         TextFormField(
                           controller: controller.payPerHourController,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(
                             hintText: '12.00',
                             prefixIcon: Icon(Icons.currency_pound),
@@ -152,83 +165,86 @@ class AddShiftScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-              ),
-              const SizedBox(height: 20),
-
-              // ─── Notes ───────────────────────────────────
-              _buildSectionLabel('Notes (Optional)', isDark),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: controller.notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Any additional notes...',
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(bottom: 40),
-                    child: Icon(Icons.notes_outlined),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-              // ─── Auto Calculation Preview ────────────────
-              Obx(() => _buildCalculationPreview(controller, isDark)),
-              const SizedBox(height: 24),
-
-              // ─── Submit Button ───────────────────────────
-              Obx(() => SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: controller.isLoading.value
-                          ? null
-                          : () async {
-                              if (formKey.currentState!.validate()) {
-                                bool success;
-                                if (controller.isEditing.value) {
-                                  success = await controller.updateShift();
-                                } else {
-                                  success = await controller.addShift();
-                                }
-                                if (success) Get.back();
-                              }
-                            },
-                      child: controller.isLoading.value
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primaryDark),
-                              ),
-                            )
-                          : Text(
-                              controller.isEditing.value
-                                  ? 'Update Shift'
-                                  : 'Save Shift',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                  // ─── Notes ───────────────────────────────────
+                  _buildSectionLabel('Notes (Optional)', isDark),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: controller.notesController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Any additional notes...',
+                      prefixIcon: Padding(
+                        padding: EdgeInsets.only(bottom: 40),
+                        child: Icon(Icons.notes_outlined),
+                      ),
                     ),
-                  )),
-              const SizedBox(height: 24),
-
-              // ─── Motivational Quote ──────────────────────
-              Center(
-                child: Text(
-                  AppConstants.motivationalQuote,
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    color: AppColors.accent.withValues(alpha: 0.5),
-                    fontStyle: FontStyle.italic,
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                  const SizedBox(height: 24),
+
+                  // ─── Auto Calculation Preview ────────────────
+                  Obx(() => _buildCalculationPreview(controller, isDark)),
+                  const SizedBox(height: 24),
+
+                  // ─── Submit Button ───────────────────────────
+                  Obx(
+                    () => SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  bool success;
+                                  if (controller.isEditing.value) {
+                                    success = await controller.updateShift();
+                                  } else {
+                                    success = await controller.addShift();
+                                  }
+                                  if (success) Get.back();
+                                }
+                              },
+                        child: controller.isLoading.value
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.primaryDark,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                controller.isEditing.value
+                                    ? 'Update Shift'
+                                    : 'Save Shift',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ─── Motivational Quote ──────────────────────
+                  Center(
+                    child: Text(
+                      AppConstants.motivationalQuote,
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        color: AppColors.accent.withValues(alpha: 0.5),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
           ),
@@ -256,13 +272,7 @@ class AddShiftScreen extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 420) {
-          return Column(
-            children: [
-              first,
-              const SizedBox(height: 20),
-              second,
-            ],
-          );
+          return Column(children: [first, const SizedBox(height: 20), second]);
         }
 
         return Row(
@@ -292,9 +302,9 @@ class AddShiftScreen extends StatelessWidget {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: Theme.of(context).colorScheme.copyWith(
-                      primary: AppColors.accent,
-                    ),
+                colorScheme: Theme.of(
+                  context,
+                ).colorScheme.copyWith(primary: AppColors.accent),
               ),
               child: child!,
             );
@@ -307,7 +317,9 @@ class AddShiftScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDarkElevated : AppColors.cardLightElevated,
+          color: isDark
+              ? AppColors.cardDarkElevated
+              : AppColors.cardLightElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark
@@ -337,10 +349,7 @@ class AddShiftScreen extends StatelessWidget {
             const Spacer(),
             Text(
               Formatters.formatDay(controller.selectedDate.value),
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: AppColors.accent,
-              ),
+              style: GoogleFonts.outfit(fontSize: 12, color: AppColors.accent),
             ),
           ],
         ),
@@ -362,9 +371,9 @@ class AddShiftScreen extends StatelessWidget {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: Theme.of(context).colorScheme.copyWith(
-                      primary: AppColors.accent,
-                    ),
+                colorScheme: Theme.of(
+                  context,
+                ).colorScheme.copyWith(primary: AppColors.accent),
               ),
               child: child!,
             );
@@ -377,7 +386,9 @@ class AddShiftScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDarkElevated : AppColors.cardLightElevated,
+          color: isDark
+              ? AppColors.cardDarkElevated
+              : AppColors.cardLightElevated,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDark
@@ -410,10 +421,7 @@ class AddShiftScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCalculationPreview(
-    ShiftController controller,
-    bool isDark,
-  ) {
+  Widget _buildCalculationPreview(ShiftController controller, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -424,9 +432,7 @@ class AddShiftScreen extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -445,7 +451,8 @@ class AddShiftScreen extends StatelessWidget {
               _buildCalcItem(
                 'Net Hours',
                 Formatters.formatHoursMinutes(
-                    controller.calculatedNetHours.value),
+                  controller.calculatedNetHours.value,
+                ),
                 Icons.schedule_outlined,
                 isDark,
               ),
@@ -456,8 +463,7 @@ class AddShiftScreen extends StatelessWidget {
               ),
               _buildCalcItem(
                 'Total Pay',
-                Formatters.formatCurrency(
-                    controller.calculatedTotalPay.value),
+                Formatters.formatCurrency(controller.calculatedTotalPay.value),
                 Icons.payments_outlined,
                 isDark,
               ),
@@ -476,11 +482,7 @@ class AddShiftScreen extends StatelessWidget {
   ) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppColors.accent,
-        ),
+        Icon(icon, size: 20, color: AppColors.accent),
         const SizedBox(height: 6),
         Text(
           value,

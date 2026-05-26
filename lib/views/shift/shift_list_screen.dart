@@ -18,8 +18,7 @@ class ShiftListScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.primaryDark : AppColors.surfaceLight,
+      backgroundColor: isDark ? AppColors.primaryDark : AppColors.surfaceLight,
       body: SafeArea(
         child: Column(
           children: [
@@ -39,22 +38,26 @@ class ShiftListScreen extends StatelessWidget {
                           : AppColors.textPrimaryLight,
                     ),
                   ),
-                  Obx(() => Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
+                  Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${controller.filteredShifts.length} shifts',
+                        style: GoogleFonts.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.accent,
                         ),
-                        child: Text(
-                          '${controller.filteredShifts.length} shifts',
-                          style: GoogleFonts.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                      )),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -78,8 +81,10 @@ class ShiftListScreen extends StatelessWidget {
                     }
                     return const SizedBox.shrink();
                   }),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
@@ -87,45 +92,49 @@ class ShiftListScreen extends StatelessWidget {
             // ─── Filter Tabs ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              child: Obx(() => SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ShiftFilter.values.map((filter) {
-                        final isActive =
-                            controller.currentFilter.value == filter;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(_filterLabel(filter)),
-                            selected: isActive,
-                            onSelected: (_) => controller.setFilter(filter),
-                            selectedColor:
-                                AppColors.accent.withValues(alpha: 0.2),
-                            checkmarkColor: AppColors.accent,
-                            labelStyle: GoogleFonts.outfit(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isActive
-                                  ? AppColors.accent
-                                  : (isDark
+              child: Obx(
+                () => SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ShiftFilter.values.map((filter) {
+                      final isActive = controller.currentFilter.value == filter;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(_filterLabel(filter)),
+                          selected: isActive,
+                          onSelected: (_) => controller.setFilter(filter),
+                          selectedColor: AppColors.accent.withValues(
+                            alpha: 0.2,
+                          ),
+                          checkmarkColor: AppColors.accent,
+                          labelStyle: GoogleFonts.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isActive
+                                ? AppColors.accent
+                                : (isDark
                                       ? AppColors.textSecondaryDark
                                       : AppColors.textSecondaryLight),
-                            ),
-                            side: BorderSide(
-                              color: isActive
-                                  ? AppColors.accent.withValues(alpha: 0.3)
-                                  : (isDark
-                                      ? AppColors.primaryLight.withValues(alpha: 0.2)
-                                      : Colors.grey.withValues(alpha: 0.2)),
-                            ),
-                            backgroundColor: isDark
-                                ? AppColors.cardDark
-                                : AppColors.cardLight,
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  )),
+                          side: BorderSide(
+                            color: isActive
+                                ? AppColors.accent.withValues(alpha: 0.3)
+                                : (isDark
+                                      ? AppColors.primaryLight.withValues(
+                                          alpha: 0.2,
+                                        )
+                                      : Colors.grey.withValues(alpha: 0.2)),
+                          ),
+                          backgroundColor: isDark
+                              ? AppColors.cardDark
+                              : AppColors.cardLight,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
             ),
 
             // ─── Shift List ─────────────────────────────
@@ -176,6 +185,7 @@ class ShiftListScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'shift-list-add-shift-fab',
         onPressed: () {
           controller.prepareNew();
           Get.toNamed(AppRoutes.addShift);

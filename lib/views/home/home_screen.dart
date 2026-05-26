@@ -45,8 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() => _currentIndex = index);
                     },
                     extended: constraints.maxWidth >= AppBreakpoints.medium,
-                    backgroundColor:
-                        isDark ? AppColors.surfaceDark : Colors.white,
+                    backgroundColor: isDark
+                        ? AppColors.surfaceDark
+                        : Colors.white,
                     selectedIconTheme: IconThemeData(color: primaryColor),
                     selectedLabelTextStyle: TextStyle(
                       color: primaryColor,
@@ -99,7 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildIndexedBody() {
     return IndexedStack(
       index: _currentIndex,
-      children: _screens,
+      children: List.generate(_screens.length, (index) {
+        return HeroMode(
+          enabled: index == _currentIndex,
+          child: _screens[index],
+        );
+      }),
     );
   }
 
@@ -188,8 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
               color: isSelected
                   ? activeColor
                   : (isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight),
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
             ),
             if (isSelected) ...[
               const SizedBox(width: 8),
